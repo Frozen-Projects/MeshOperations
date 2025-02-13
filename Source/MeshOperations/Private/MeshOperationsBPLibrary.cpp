@@ -369,51 +369,196 @@ bool UMeshOperationsBPLibrary::GenerateMeshFromVertices(UStaticMesh*& Out_Mesh, 
     {
         return false;
     }
-    
+
+    // Create a new static mesh description.
     UStaticMeshDescription* StaticMeshDesc = UStaticMesh::CreateStaticMeshDescription();
-    
+    if (!StaticMeshDesc)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Failed to create StaticMeshDescription."));
+        return false;
+    }
+
     FMeshDescriptionBuilder MeshDescBuilder;
     MeshDescBuilder.SetMeshDescription(&StaticMeshDesc->GetMeshDescription());
     MeshDescBuilder.EnablePolyGroups();
     MeshDescBuilder.SetNumUVLayers(1);
 
-    const size_t NumVertices = In_Vertices.Num();
+    // Create vertices and vertex instances.
+    const int32 NumVertices = In_Vertices.Num();
     TArray<FVertexInstanceID> VertexInstances;
-    VertexInstances.AddUninitialized(NumVertices);
+    VertexInstances.SetNum(NumVertices);
 
-    for (unsigned int Index = 0; Index < NumVertices; Index++)
+    for (int32 Index = 0; Index < NumVertices; Index++)
     {
+        // Append a vertex and create its instance.
         const FVertexID VertexID = MeshDescBuilder.AppendVertex(In_Vertices[Index]);
         const FVertexInstanceID Instance = MeshDescBuilder.AppendInstance(VertexID);
         VertexInstances[Index] = Instance;
 
-        if (!In_Normals.IsEmpty())
+        // Set per-instance normals if provided.
+        if (!In_Normals.IsEmpty() && In_Normals.IsValidIndex(Index))
         {
             MeshDescBuilder.SetInstanceNormal(Instance, In_Normals[Index]);
         }
 
-        if (!In_UVs.IsEmpty())
+        // Set per-instance UVs if provided.
+        if (!In_UVs.IsEmpty() && In_UVs.IsValidIndex(Index))
         {
             MeshDescBuilder.SetInstanceUV(Instance, In_UVs[Index], 0);
         }
     }
 
+    // Create one polygon group (needed for at least one material).
     const FPolygonGroupID PolygonGroup = MeshDescBuilder.AppendPolygonGroup();
 
-    // At least one material must be added
+    // Validate and create triangles (polygons) from the provided indices.
+    if (In_Tris.Num() % 3 != 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Triangle index count must be a multiple of 3."));
+        return false;
+    }
+
+    const int32 NumTriangles = In_Tris.Num() / 3;
+    for (int32 Tri = 0; Tri < NumTriangles; Tri++)
+    {
+        TArray<FVertexID> TriangleVertexInstances;
+        TriangleVertexInstances.Add(VertexInstances[In_Tris[Tri * 3 + 0]]);
+        TriangleVertexInstances.Add(VertexInstances[In_Tris[Tri * 3 + 1]]);
+        TriangleVertexInstances.Add(VertexInstances[In_Tris[Tri * 3 + 2]]);
+
+        MeshDescBuilder.AppendPolygon(TriangleVertexInstances, PolygonGroup);
+    }
+
+    // Create a new UStaticMesh and add at least one material.
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
     StaticMesh->GetStaticMaterials().Add(FStaticMaterial());
 
+    // Build parameters (e.g., enabling simple collision).
     UStaticMesh::FBuildMeshDescriptionsParams MeshDescriptionsParams;
     MeshDescriptionsParams.bBuildSimpleCollision = true;
 
-    // Build static mesh
+    // Build the mesh from the description.
     TArray<const FMeshDescription*> MeshDescriptions;
     MeshDescriptions.Emplace(&StaticMeshDesc->GetMeshDescription());
     StaticMesh->BuildFromMeshDescriptions(MeshDescriptions, MeshDescriptionsParams);
 
     Out_Mesh = StaticMesh;
     return true;
+}
+
+UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs)
+{
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), NAME_None, RF_Public | RF_Standalone);
+
+    if (!StaticMesh)
+    {
+        return nullptr;
+    }
+
+    StaticMesh->bAllowCPUAccess = true;
+    StaticMesh->NeverStream = true;
+    StaticMesh->bSupportRayTracing = false;
+
+    StaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
+    FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
+
+    if (!RenderData)
+    {
+        return nullptr;
+    }
+
+	TArray<uint32> U_Indices;
+    for (size_t i = 0; i < Indices.Num(); i++)
+    {
+		U_Indices.Add(Indices[i]);
+    }
+
+    RenderData->AllocateLODResources(1);
+    FStaticMeshLODResources& LOD_Resource = RenderData->LODResources[0];
+    LOD_Resource.IndexBuffer.SetIndices(U_Indices, EIndexBufferStride::Force32Bit);
+
+    // Set the index buffer.
+    LOD_Resource.IndexBuffer.SetIndices(U_Indices, EIndexBufferStride::Force32Bit);
+
+    // --- POSITION VERTEX BUFFER ---
+    const int32 NumPositions = Vertices.Num();
+    LOD_Resource.VertexBuffers.PositionVertexBuffer.Init(NumPositions);
+    for (int32 PositionIndex = 0; PositionIndex < NumPositions; PositionIndex++)
+    {
+        LOD_Resource.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) = (FVector3f)Vertices[PositionIndex];
+    }
+
+    // --- STATIC MESH VERTEX BUFFER ---
+    // We assume one UV channel.
+    uint32 NumVertices = Vertices.Num();
+    const uint32 NumTexCoords = 1;
+    LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.SetUseFullPrecisionUVs(true);
+    LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.Init(NumVertices, NumTexCoords);
+
+    for (uint32 VertexIndex = 0; VertexIndex < NumVertices; VertexIndex++)
+    {
+        // Use input tangents and normals.
+        FVector3f TangentF = (FVector3f)Tangents[VertexIndex];
+        FVector3f NormalF = (FVector3f)Normals[VertexIndex];
+        // Compute binormal (bitangent) from the cross product.
+        FVector3f BinormalF = (FVector3f)(FVector::CrossProduct(Normals[VertexIndex], Tangents[VertexIndex])).GetSafeNormal();
+
+        LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.SetVertexTangents(VertexIndex, TangentF, BinormalF, NormalF);
+
+        // Set the UV for channel 0.
+        LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.SetVertexUV(VertexIndex, 0, (FVector2f)UVs[VertexIndex]);
+    }
+
+    // --- MESH SECTIONS ---
+    // Create one section covering the entire mesh.
+    LOD_Resource.Sections.Empty();
+    FStaticMeshSection NewSection;
+    NewSection.FirstIndex = 0;
+    NewSection.NumTriangles = Indices.Num() / 3;
+    NewSection.MinVertexIndex = 0;
+    NewSection.MaxVertexIndex = Vertices.Num() - 1;
+    NewSection.MaterialIndex = 0;
+    LOD_Resource.Sections.Add(NewSection);
+
+    // --- BOUNDS ---
+    FBox BoundingBox(Vertices);
+    RenderData->Bounds = FBoxSphereBounds(BoundingBox);
+
+    // Finalize render data.
+    StaticMesh->InitResources();
+    StaticMesh->CalculateExtendedBounds();
+
+    // --- AGGREGATED COLLISION GEOMETRY (AggGeom) ---
+    UBodySetup* BodySetup = NewObject<UBodySetup>(StaticMesh, NAME_None, RF_Public | RF_Standalone);
+    StaticMesh->SetBodySetup(BodySetup);
+    BodySetup->CollisionTraceFlag = CTF_UseDefault;
+
+    // Clear any existing collision elements.
+    BodySetup->AggGeom.BoxElems.Empty();
+    BodySetup->AggGeom.SphereElems.Empty();
+    BodySetup->AggGeom.SphylElems.Empty();
+    BodySetup->AggGeom.ConvexElems.Empty();
+
+    // 1. Create a box collision element from the bounding box.
+    FKBoxElem BoxElem;
+    FVector BoxCenter = BoundingBox.GetCenter();
+    FVector BoxExtent = BoundingBox.GetExtent();
+    BoxElem.Center = BoxCenter;
+    BoxElem.X = BoxExtent.X * 2.0f;
+    BoxElem.Y = BoxExtent.Y * 2.0f;
+    BoxElem.Z = BoxExtent.Z * 2.0f;
+    BodySetup->AggGeom.BoxElems.Add(BoxElem);
+
+    // 2. Create a convex collision element using the input vertices.
+    FKConvexElem ConvexElem;
+    ConvexElem.VertexData = Vertices;
+    ConvexElem.UpdateElemBox();
+    BodySetup->AggGeom.ConvexElems.Add(ConvexElem);
+
+    BodySetup->InvalidatePhysicsData();
+    BodySetup->CreatePhysicsMeshes();
+
+    return StaticMesh;
 }
 
 void UMeshOperationsBPLibrary::DeleteEmptyRoots(USceneComponent* AssetRoot)
@@ -718,6 +863,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
     UStaticMesh* NewStaticMesh = NewObject<UStaticMesh>(Outer ? Outer : GetTransientPackage(), NAME_None, RF_Public);
     NewStaticMesh->bAllowCPUAccess = true;
     NewStaticMesh->NeverStream = true;
+    NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
 
     NewStaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* NewRenderData = NewStaticMesh->GetRenderData();
@@ -750,6 +896,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
             FVector4f TangentY = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentY(VertexIndex);
             FVector4f TangentZ = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex);
             NewLOD.VertexBuffers.StaticMeshVertexBuffer.SetVertexTangents(VertexIndex, TangentX, TangentY, TangentZ);
+            
             for (uint32 UVIndex = 0; UVIndex < OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords(); UVIndex++)
             {
                 FVector2f UV = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, UVIndex);

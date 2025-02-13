@@ -47,6 +47,9 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable)
     static bool GenerateMeshFromVertices(UStaticMesh*& Out_Mesh, TArray<FVector> In_Vertices, TArray<FVector> In_Normals, TArray<FVector2D> In_UVs, TArray<int32> In_Tris);
 
+    UFUNCTION(BlueprintCallable)
+    static UStaticMesh* GenerateStaticMesh(const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs);
+
     UFUNCTION(BlueprintCallable, meta = (DispayName = "Delete Empty Roots", Keywords = "optimize,hierarchy,empty,root,roots"), Category = "MeshOperations")
     static void DeleteEmptyRoots(USceneComponent* AssetRoot);
 
