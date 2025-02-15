@@ -370,36 +370,20 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     MeshDescBuilder.EnablePolyGroups();
     MeshDescBuilder.SetNumUVLayers(1);
 
-    // Create vertices and vertex instances.
+    // Create the base vertices.
     const int32 NumVertices = Vertices.Num();
-    TArray<FVertexInstanceID> VertexInstances;
-    VertexInstances.SetNum(NumVertices);
+    TArray<FVertexID> BaseVertexIDs;
+    BaseVertexIDs.SetNum(NumVertices);
 
     for (int32 Index = 0; Index < NumVertices; Index++)
     {
-        // Append a vertex and create its instance.
-        const FVertexID VertexID = MeshDescBuilder.AppendVertex(Vertices[Index]);
-        const FVertexInstanceID Instance = MeshDescBuilder.AppendInstance(VertexID);
-        VertexInstances[Index] = Instance;
-
-        // Set per-instance normals if provided.
-        if (!Normals.IsEmpty() && Normals.IsValidIndex(Index))
-        {
-            MeshDescBuilder.SetInstanceNormal(Instance, Normals[Index]);
-        }
-
-        // Set per-instance UVs if provided.
-        if (!UVs.IsEmpty() && UVs.IsValidIndex(Index))
-        {
-            FVector2D CorrectedUV(UVs[Index].X, 1.0f - UVs[Index].Y);
-            MeshDescBuilder.SetInstanceUV(Instance, CorrectedUV, 0);
-        }
+        BaseVertexIDs[Index] = MeshDescBuilder.AppendVertex(Vertices[Index]);
     }
 
-    // Create one polygon group (needed for at least one material).
+    // Create one polygon group (required for at least one material).
     const FPolygonGroupID PolygonGroup = MeshDescBuilder.AppendPolygonGroup();
 
-    // Validate and create triangles (polygons) from the provided indices.
+    // Validate triangle indices.
     if (Indices.Num() % 3 != 0)
     {
         UE_LOG(LogTemp, Error, TEXT("Triangle index count must be a multiple of 3."));
@@ -409,22 +393,49 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     const int32 NumTriangles = Indices.Num() / 3;
     for (int32 Tri = 0; Tri < NumTriangles; Tri++)
     {
-        TArray<FVertexID> TriangleVertexInstances;
-        TriangleVertexInstances.Add(VertexInstances[Indices[Tri * 3 + 0]]);
-        TriangleVertexInstances.Add(VertexInstances[Indices[Tri * 3 + 1]]);
-        TriangleVertexInstances.Add(VertexInstances[Indices[Tri * 3 + 2]]);
+        TArray<FVertexInstanceID> TriangleVertexInstances;
+        TriangleVertexInstances.Reserve(3);
 
-        MeshDescBuilder.AppendPolygon(TriangleVertexInstances, PolygonGroup);
+        for (int32 Corner = 0; Corner < 3; Corner++)
+        {
+            const int32 IndexPos = Tri * 3 + Corner;
+            const int32 VertexIndex = Indices[IndexPos];
+
+            if (!BaseVertexIDs.IsValidIndex(VertexIndex))
+            {
+                UE_LOG(LogTemp, Error, TEXT("Invalid vertex index %d at triangle %d corner %d"), VertexIndex, Tri, Corner);
+                return nullptr;
+            }
+
+            // Create a vertex instance for this triangle corner.
+            FVertexInstanceID InstanceID = MeshDescBuilder.AppendInstance(BaseVertexIDs[VertexIndex]);
+
+            // Set per-instance normal if provided.
+            if (!Normals.IsEmpty() && Normals.IsValidIndex(VertexIndex))
+            {
+                MeshDescBuilder.SetInstanceNormal(InstanceID, Normals[VertexIndex]);
+            }
+
+            if (!UVs.IsEmpty() && UVs.IsValidIndex(VertexIndex))
+            {
+                MeshDescBuilder.SetInstanceUV(InstanceID, UVs[VertexIndex], 0);
+            }
+
+            TriangleVertexInstances.Add(InstanceID);
+        }
+
+        // Use the underlying MeshDescription to create the polygon with vertex instances.
+        StaticMeshDesc->GetMeshDescription().CreatePolygon(PolygonGroup, TriangleVertexInstances);
     }
 
-    // Create a new UStaticMesh and add at least one material.
-    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : (FName)Mesh_Name, RF_Public | RF_Standalone);
+    // Create a new UStaticMesh with the provided name.
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : FName(*Mesh_Name), RF_Public | RF_Standalone);
     StaticMesh->GetStaticMaterials().Add(FStaticMaterial());
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
     StaticMesh->bSupportRayTracing = false;
 
-    // Build parameters (e.g., enabling simple collision).
+    // Build parameters (for example, enabling simple collision).
     UStaticMesh::FBuildMeshDescriptionsParams MeshDescriptionsParams;
     MeshDescriptionsParams.bBuildSimpleCollision = true;
 
