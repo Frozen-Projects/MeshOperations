@@ -80,153 +80,129 @@ bool UMeshOperationsBPLibrary::GetComponentByName(FName InName, UObject* Owner, 
     }
 }
 
-bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_SMC, FName& Out_SMC_Name, FName InName, AActor* SMC_Outer, EAttachmentRule SMC_Attachment_Rule, bool SMC_Manual_Attachment, FTransform SMC_Relative_Transform, EComponentMobility::Type SMC_Mobility)
+bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName InName, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
-    if (IsValid(SMC_Outer) == false)
+    if (!IsValid(Outer))
     {
-        Out_SMC = nullptr;
-        Out_SMC_Name = NAME_None;
-
+        Out_Comp = nullptr;
+        Out_Name = NAME_None;
         return false;
     }
 
-    if (InName.ToString().IsEmpty() == true)
-    {
-        InName = NAME_None;
-    }
+	UStaticMeshComponent* StaticMeshComp = NewObject<UStaticMeshComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
 
-    //Static Mesh Component Creation.
-    UStaticMeshComponent* StaticMeshComp = NewObject<UStaticMeshComponent>(SMC_Outer, InName);
-
-    if (StaticMeshComp != nullptr)
-    {
-        //Set Mobility of Static Mesh Component.
-        StaticMeshComp->SetMobility(SMC_Mobility);
-
-        //Render Static Mesh Component.
-        StaticMeshComp->RegisterComponent();
-
-        //Get Root Component.
-        USceneComponent* ActorRootForSMC = SMC_Outer->GetRootComponent();
-
-        //Create Attachment Rules.
-        StaticMeshComp->AttachToComponent(ActorRootForSMC, FAttachmentTransformRules(SMC_Attachment_Rule, true));
-
-        if (SMC_Manual_Attachment == true)
-        {
-            //Set Realtive Transform.
-            StaticMeshComp->SetRelativeTransform(SMC_Relative_Transform);
-        }
-
-        //Output Pins.
-        Out_SMC = StaticMeshComp;
-        Out_SMC_Name = InName;
-
-        return true;
-    }
-
-    else
-    {
-        Out_SMC = nullptr;
-        Out_SMC_Name = NAME_None;
-
-        return false;
-    }
-}
-
-void UMeshOperationsBPLibrary::AddSceneCompWithName(FName InName, AActor* SC_Outer, EComponentMobility::Type SC_Mobility, EAttachmentRule SC_Attachment_Rule, bool SC_Manual_Attachment, const FTransform SC_Relative_Transform, bool& Is_SC_Created, FName& Out_SC_Name, USceneComponent*& Out_SC)
-{
-    if (SC_Outer != NULL)
-    {
-        if (InName.ToString().IsEmpty() == true)
-        {
-            InName = NAME_None;
-        }
-
-        //Scene Component Creation.
-        USceneComponent* SceneComp = NewObject<USceneComponent>(SC_Outer, InName);
-
-        if (SceneComp != nullptr)
-        {
-            //Set Mobility of Scene Component.
-            SceneComp->SetMobility(SC_Mobility);
-
-            //Get Root Component.
-            USceneComponent* ActorRootForSC = SC_Outer->GetRootComponent();
-
-            //Create Attachment Rules.
-            SceneComp->AttachToComponent(ActorRootForSC, FAttachmentTransformRules(SC_Attachment_Rule, true));
-
-            if (SC_Manual_Attachment == true)
-            {
-                //Set Realtive Transform.
-                SceneComp->SetRelativeTransform(SC_Relative_Transform);
-            }
-
-            //Output Pins.
-            Out_SC = SceneComp;
-            Out_SC_Name = InName;
-            Is_SC_Created = SceneComp->IsValidLowLevel();
-        }
-    }
-
-    else
-    {
-        //If outer is not valid, we can not create a "scene component" and program will crash. So we just return false.       
-        Out_SC = nullptr;
-        Out_SC_Name = NAME_None;
-        Is_SC_Created = false;
-    }
-}
-
-bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(FName& Out_PMC_Name, UProceduralMeshComponent*& Out_PMC, AActor* PMC_Outer, FName InName, EAttachmentRule PMC_Attachment_Rule, bool PMC_Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform PMC_Relative_Transform, EComponentMobility::Type PMC_Mobility)
-{
-    if (IsValid(PMC_Outer) == false)
-    {
-        return false;
-    }
-    
-    if (InName.ToString().IsEmpty() == true)
-    {
-        InName = NAME_None;
-    }
-
-    //Procedural Mesh Component Creation.
-    UProceduralMeshComponent* ProcMeshComp = NewObject<UProceduralMeshComponent>(PMC_Outer, InName);
-
-    if (IsValid(ProcMeshComp) == false)
+    if (StaticMeshComp == nullptr)
     {
         return false;
     }
 
-    ProcMeshComp->SetMobility(PMC_Mobility);
-    ProcMeshComp->bUseAsyncCooking = bUseAsyncCooking;
-    ProcMeshComp->bUseComplexAsSimpleCollision = bUseComplexCollisionAsSimple;
-    ProcMeshComp->RegisterComponent();
-    ProcMeshComp->AttachToComponent(PMC_Outer->GetRootComponent(), FAttachmentTransformRules(PMC_Attachment_Rule, true));
+    //Set Mobility of Static Mesh Component.
+    StaticMeshComp->SetMobility(Mobility);
 
-    if (PMC_Manual_Attachment == true)
+    //Render Static Mesh Component.
+    StaticMeshComp->RegisterComponent();
+
+    //Get Root Component.
+    USceneComponent* ActorRootForSMC = Outer->GetRootComponent();
+
+    //Create Attachment Rules.
+    StaticMeshComp->AttachToComponent(ActorRootForSMC, FAttachmentTransformRules(Attachment_Rule, true));
+
+    if (Manual_Attachment == true)
     {
-        //Set Realtive Transform.
-        ProcMeshComp->SetRelativeTransform(PMC_Relative_Transform);
+        StaticMeshComp->SetRelativeTransform(RelativeTransform);
     }
 
-    //Output Pins
-    Out_PMC = ProcMeshComp;
-    Out_PMC_Name = InName;
+    //Output Pins.
+    Out_Comp = StaticMeshComp;
+    Out_Name = InName;
 
     return true;
 }
 
-void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FProcMeshTangent>& Tangents)
+bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName InName, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
-    // Generate verts
-    FVector BoxVerts[8];
-    BoxVerts[0] = FVector(-BoxRadius.X, BoxRadius.Y, BoxRadius.Z);
-    BoxVerts[1] = FVector(BoxRadius.X, BoxRadius.Y, BoxRadius.Z);
-    BoxVerts[2] = FVector(BoxRadius.X, -BoxRadius.Y, BoxRadius.Z);
-    BoxVerts[3] = FVector(-BoxRadius.X, -BoxRadius.Y, BoxRadius.Z);
+    if (!IsValid(Outer))
+    {
+        Out_Comp = nullptr;
+        Out_Name = NAME_None;
+        return false;
+    }
 
+    USceneComponent* SceneComp = NewObject<USceneComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
+
+    if (SceneComp == nullptr)
+    {
+        return false;
+    }
+
+    //Set Mobility of Static Mesh Component.
+    SceneComp->SetMobility(Mobility);
+
+    //Get Root Component.
+    USceneComponent* ActorRootForSC = Outer->GetRootComponent();
+
+    //Create Attachment Rules.
+    SceneComp->AttachToComponent(ActorRootForSC, FAttachmentTransformRules(Attachment_Rule, true));
+
+    if (Manual_Attachment == true)
+    {
+        //Set Realtive Transform.
+        SceneComp->SetRelativeTransform(RelativeTransform);
+    }
+
+    Out_Comp = SceneComp;
+    Out_Name = InName;
+    return true;
+}
+
+bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FName InName, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
+{
+    if (!IsValid(Outer))
+    {
+        Out_Comp = nullptr;
+        Out_Name = NAME_None;
+        return false;
+    }
+
+    UProceduralMeshComponent* ProcMeshComp = NewObject<UProceduralMeshComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
+
+    if (ProcMeshComp == nullptr)
+    {
+        return false;
+    }
+
+    //Set Mobility of Static Mesh Component.
+    ProcMeshComp->SetMobility(Mobility);
+
+    ProcMeshComp->bUseAsyncCooking = bUseAsyncCooking;
+    ProcMeshComp->bUseComplexAsSimpleCollision = bUseComplexCollisionAsSimple;
+    ProcMeshComp->RegisterComponent();
+    ProcMeshComp->AttachToComponent(Outer->GetRootComponent(), FAttachmentTransformRules(Attachment_Rule, true));
+
+    if (Manual_Attachment == true)
+    {
+        //Set Realtive Transform.
+        ProcMeshComp->SetRelativeTransform(Relative_Transform);
+    }
+
+    //Output Pins
+    Out_Comp = ProcMeshComp;
+    Out_Name = InName;
+
+    return true;
+}
+
+void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FProcMeshTangent>& ProcMeshTangents, TArray<FVector>& Tangents)
+{
+    FVector BoxVerts[8];
+    // Top vertices (shifted upward)
+    BoxVerts[0] = FVector(-BoxRadius.X, BoxRadius.Y, 2 * BoxRadius.Z);
+    BoxVerts[1] = FVector(BoxRadius.X, BoxRadius.Y, 2 * BoxRadius.Z);
+    BoxVerts[2] = FVector(BoxRadius.X, -BoxRadius.Y, 2 * BoxRadius.Z);
+    BoxVerts[3] = FVector(-BoxRadius.X, -BoxRadius.Y, 2 * BoxRadius.Z);
+
+    // Bottom vertices
     BoxVerts[4] = FVector(-BoxRadius.X, BoxRadius.Y, 0);
     BoxVerts[5] = FVector(BoxRadius.X, BoxRadius.Y, 0);
     BoxVerts[6] = FVector(BoxRadius.X, -BoxRadius.Y, 0);
@@ -234,7 +210,6 @@ void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray
 
     // Generate triangles (from quads)
     Triangles.Reset();
-
     const int32 NumVerts = 24; // 6 faces x 4 verts per face
 
     Vertices.Reset();
@@ -243,67 +218,79 @@ void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray
     Normals.Reset();
     Normals.AddUninitialized(NumVerts);
 
+    ProcMeshTangents.Reset();
+    ProcMeshTangents.AddUninitialized(NumVerts);
+
     Tangents.Reset();
     Tangents.AddUninitialized(NumVerts);
 
+    // Top face
     Vertices[0] = BoxVerts[0];
     Vertices[1] = BoxVerts[1];
     Vertices[2] = BoxVerts[2];
     Vertices[3] = BoxVerts[3];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 0, 1, 2, 3);
     Normals[0] = Normals[1] = Normals[2] = Normals[3] = FVector(0, 0, 1);
-    Tangents[0] = Tangents[1] = Tangents[2] = Tangents[3] = FProcMeshTangent(0.f, -1.f, 0.f);
+    ProcMeshTangents[0] = ProcMeshTangents[1] = ProcMeshTangents[2] = ProcMeshTangents[3] = FProcMeshTangent(0.f, -1.f, 0.f);
+    Tangents[0] = Tangents[1] = Tangents[2] = Tangents[3] = FVector(0.f, -1.f, 0.f);
 
+    // Left face
     Vertices[4] = BoxVerts[4];
     Vertices[5] = BoxVerts[0];
     Vertices[6] = BoxVerts[3];
     Vertices[7] = BoxVerts[7];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 4, 5, 6, 7);
     Normals[4] = Normals[5] = Normals[6] = Normals[7] = FVector(-1, 0, 0);
-    Tangents[4] = Tangents[5] = Tangents[6] = Tangents[7] = FProcMeshTangent(0.f, -1.f, 0.f);
+    ProcMeshTangents[4] = ProcMeshTangents[5] = ProcMeshTangents[6] = ProcMeshTangents[7] = FProcMeshTangent(0.f, -1.f, 0.f);
+    Tangents[4] = Tangents[5] = Tangents[6] = Tangents[7] = FVector(0.f, -1.f, 0.f);
 
+    // Front face
     Vertices[8] = BoxVerts[5];
     Vertices[9] = BoxVerts[1];
     Vertices[10] = BoxVerts[0];
     Vertices[11] = BoxVerts[4];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 8, 9, 10, 11);
     Normals[8] = Normals[9] = Normals[10] = Normals[11] = FVector(0, 1, 0);
-    Tangents[8] = Tangents[9] = Tangents[10] = Tangents[11] = FProcMeshTangent(-1.f, 0.f, 0.f);
+    ProcMeshTangents[8] = ProcMeshTangents[9] = ProcMeshTangents[10] = ProcMeshTangents[11] = FProcMeshTangent(-1.f, 0.f, 0.f);
+    Tangents[8] = Tangents[9] = Tangents[10] = Tangents[11] = FVector(0.f, -1.f, 0.f);
 
+    // Right face
     Vertices[12] = BoxVerts[6];
     Vertices[13] = BoxVerts[2];
     Vertices[14] = BoxVerts[1];
     Vertices[15] = BoxVerts[5];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 12, 13, 14, 15);
     Normals[12] = Normals[13] = Normals[14] = Normals[15] = FVector(1, 0, 0);
-    Tangents[12] = Tangents[13] = Tangents[14] = Tangents[15] = FProcMeshTangent(0.f, 1.f, 0.f);
+    ProcMeshTangents[12] = ProcMeshTangents[13] = ProcMeshTangents[14] = ProcMeshTangents[15] = FProcMeshTangent(0.f, 1.f, 0.f);
+    Tangents[12] = Tangents[13] = Tangents[14] = Tangents[15] = FVector(0.f, -1.f, 0.f);
 
+    // Back face
     Vertices[16] = BoxVerts[7];
     Vertices[17] = BoxVerts[3];
     Vertices[18] = BoxVerts[2];
     Vertices[19] = BoxVerts[6];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 16, 17, 18, 19);
     Normals[16] = Normals[17] = Normals[18] = Normals[19] = FVector(0, -1, 0);
-    Tangents[16] = Tangents[17] = Tangents[18] = Tangents[19] = FProcMeshTangent(1.f, 0.f, 0.f);
+    ProcMeshTangents[16] = ProcMeshTangents[17] = ProcMeshTangents[18] = ProcMeshTangents[19] = FProcMeshTangent(1.f, 0.f, 0.f);
+    Tangents[16] = Tangents[17] = Tangents[18] = Tangents[19] = FVector(0.f, -1.f, 0.f);
 
+    // Bottom face
     Vertices[20] = BoxVerts[7];
     Vertices[21] = BoxVerts[6];
     Vertices[22] = BoxVerts[5];
     Vertices[23] = BoxVerts[4];
     UKismetProceduralMeshLibrary::ConvertQuadToTriangles(Triangles, 20, 21, 22, 23);
     Normals[20] = Normals[21] = Normals[22] = Normals[23] = FVector(0, 0, -1);
-    Tangents[20] = Tangents[21] = Tangents[22] = Tangents[23] = FProcMeshTangent(0.f, 1.f, 0.f);
+    ProcMeshTangents[20] = ProcMeshTangents[21] = ProcMeshTangents[22] = ProcMeshTangents[23] = FProcMeshTangent(0.f, 1.f, 0.f);
+    Tangents[20] = Tangents[21] = Tangents[22] = Tangents[23] = FVector(0.f, -1.f, 0.f);
 
     // UVs
     UVs.Reset();
     UVs.AddUninitialized(NumVerts);
-
     UVs[0] = UVs[4] = UVs[8] = UVs[12] = UVs[16] = UVs[20] = FVector2D(0.f, 0.f);
     UVs[1] = UVs[5] = UVs[9] = UVs[13] = UVs[17] = UVs[21] = FVector2D(0.f, 1.f);
     UVs[2] = UVs[6] = UVs[10] = UVs[14] = UVs[18] = UVs[22] = FVector2D(1.f, 1.f);
     UVs[3] = UVs[7] = UVs[11] = UVs[15] = UVs[19] = UVs[23] = FVector2D(1.f, 0.f);
-
-    UStaticMesh* StaticMesh = nullptr;
 }
 
 void UMeshOperationsBPLibrary::GenerateCylinderMesh(double Radius, double ArcSize, TArray<FVector2D>& Vertices, int32& EdgeTriangles)
@@ -446,9 +433,9 @@ bool UMeshOperationsBPLibrary::GenerateMeshFromVertices(UStaticMesh*& Out_Mesh, 
     return true;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs)
+UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs)
 {
-    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), NAME_None, RF_Public | RF_Standalone);
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : (FName)Mesh_Name, RF_Public | RF_Standalone);
 
     if (!StaticMesh)
     {
@@ -467,17 +454,21 @@ UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(const TArray<FVector>&
         return nullptr;
     }
 
+    const size_t NumElements = Indices.Num();
 	TArray<uint32> U_Indices;
-    for (size_t i = 0; i < Indices.Num(); i++)
-    {
-		U_Indices.Add(Indices[i]);
-    }
+    U_Indices.SetNum(NumElements);
 
+    ParallelFor(NumElements, [&Indices, &U_Indices](int32 Index)
+        {
+            U_Indices[Index] = static_cast<uint32>(Indices[Index]);
+        }
+    );
+
+	// We assume one LOD.
     RenderData->AllocateLODResources(1);
     FStaticMeshLODResources& LOD_Resource = RenderData->LODResources[0];
-    LOD_Resource.IndexBuffer.SetIndices(U_Indices, EIndexBufferStride::Force32Bit);
 
-    // Set the index buffer.
+	// This allows us to use more than 65535 vertices.
     LOD_Resource.IndexBuffer.SetIndices(U_Indices, EIndexBufferStride::Force32Bit);
 
     // --- POSITION VERTEX BUFFER ---
@@ -489,11 +480,12 @@ UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(const TArray<FVector>&
     }
 
     // --- STATIC MESH VERTEX BUFFER ---
-    // We assume one UV channel.
+
     uint32 NumVertices = Vertices.Num();
-    const uint32 NumTexCoords = 1;
     LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.SetUseFullPrecisionUVs(true);
-    LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.Init(NumVertices, NumTexCoords);
+
+    // We assume one UV channel.
+    LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.Init(NumVertices, 1);
 
     for (uint32 VertexIndex = 0; VertexIndex < NumVertices; VertexIndex++)
     {
@@ -510,6 +502,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(const TArray<FVector>&
     }
 
     // --- MESH SECTIONS ---
+    
     // Create one section covering the entire mesh.
     LOD_Resource.Sections.Empty();
     FStaticMeshSection NewSection;
