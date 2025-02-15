@@ -350,7 +350,7 @@ bool UMeshOperationsBPLibrary::GenerateWave(bool bIsSin, double Amplitude, doubl
     return true;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bEnableRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
 {
     if (Vertices.IsEmpty())
     {
@@ -441,7 +441,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     StaticMesh->GetStaticMaterials().Add(FStaticMaterial());
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
-    StaticMesh->bSupportRayTracing = bEnableRayTracing;
+    StaticMesh->bSupportRayTracing = bSupportRayTracing;
 
     // Build parameters (for example, enabling simple collision).
     UStaticMesh::FBuildMeshDescriptionsParams MeshDescriptionsParams;
@@ -455,7 +455,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     return StaticMesh;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bEnableRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
 {
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : (FName)Mesh_Name, RF_Public | RF_Standalone);
 
@@ -466,7 +466,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
 
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
-    StaticMesh->bSupportRayTracing = bEnableRayTracing;
+    StaticMesh->bSupportRayTracing = false;
 
     StaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
@@ -577,16 +577,16 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     return StaticMesh;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription, bool bEnableRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription, bool bSupportRayTracing)
 {
     if (bUseDescription)
     {
-       return UMeshOperationsBPLibrary::GSM_Description(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bEnableRayTracing);
+       return UMeshOperationsBPLibrary::GSM_Description(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bSupportRayTracing);
     }
 
     else
     {
-		return UMeshOperationsBPLibrary::GSM_RenderData(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bEnableRayTracing);
+		return UMeshOperationsBPLibrary::GSM_RenderData(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bSupportRayTracing);
     }
 }
 
