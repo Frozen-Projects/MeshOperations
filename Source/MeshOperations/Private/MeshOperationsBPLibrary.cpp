@@ -451,6 +451,11 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     TArray<const FMeshDescription*> MeshDescriptions;
     MeshDescriptions.Emplace(&StaticMeshDesc->GetMeshDescription());
     StaticMesh->BuildFromMeshDescriptions(MeshDescriptions, MeshDescriptionsParams);
+    
+    StaticMesh->CreateBodySetup();
+    StaticMesh->GetBodySetup()->CollisionTraceFlag = CTF_UseComplexAsSimple;
+    StaticMesh->GetBodySetup()->InvalidatePhysicsData();
+    StaticMesh->GetBodySetup()->CreatePhysicsMeshes();
 
     return StaticMesh;
 }
