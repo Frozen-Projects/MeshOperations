@@ -471,7 +471,6 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
 
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
-    StaticMesh->bSupportRayTracing = false;
 
     StaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
@@ -544,6 +543,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     // --- BOUNDS ---
     FBox BoundingBox(Vertices);
     RenderData->Bounds = FBoxSphereBounds(BoundingBox);
+    RenderData->InitializeRayTracingRepresentationFromRenderingLODs();
 
     // Finalize render data.
     StaticMesh->InitResources();
@@ -578,6 +578,8 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
 
     BodySetup->InvalidatePhysicsData();
     BodySetup->CreatePhysicsMeshes();
+
+    StaticMesh->bSupportRayTracing = bSupportRayTracing;
 
     return StaticMesh;
 }
