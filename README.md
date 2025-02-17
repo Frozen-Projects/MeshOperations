@@ -1,10 +1,5 @@
 # MeshOperations
 
-Editable mesh component deprecated at UE5 and most of geometry script functions are editor only.
-For this reason, we created a new plugin for runtime pivot operations.
-You can mail us to reach it.
-
---------------------------------------------------------------------------------------------
 - Add Scene Component with Name
 - Add Static Mesh Component with Name
 - Add Procedural Mesh Component with Name
@@ -19,9 +14,18 @@ You can mail us to reach it.
 - Delete Empty Roots
 - Delete Empty Parents Recursive
 - Rename Object
+- Get Vertices Transforms (Locations and Direction as Rotator)
+- Set Pivot Location
+- Move Pivot Location to Center
+- Get Direction of Vector
 --------------------------------------------------------------------------------------------
-PLATFORM SUPPORT:
-- Plugin is for UE5 and Windows platform. We didn't try other platforms.
+## PLATFORM SUPPORT:
+We didn't use any third party library. So, it should work with all platforms but we didn't try other than Windows.
 
-CONTRIBUTIONS:
-- If you know better approaches feel free to give pull requests. We will appreciate (or even pay) for your contributions.
+## ROADMAP
+- Create Procedural Mesh from Static Mesh
+Create Static Mesh from Procedural Mesh
+
+## CONTRIBUTIONS
+If you know better approaches feel free to give pull requests.
+
