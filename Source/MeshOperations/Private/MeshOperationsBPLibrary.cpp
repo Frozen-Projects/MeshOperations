@@ -733,10 +733,12 @@ void UMeshOperationsBPLibrary::OptimizeCenter(USceneComponent* AssetRoot)
 
     // Calculate assembly center (Relative Location).
     FVector Sum(0.f);
+    
     for (int32 ChildID = 0; ChildID < (ChildrenLocations.Num()); ChildID++)
     {
         Sum += ChildrenLocations[ChildID];
     }
+   
     FVector AssemblyCenter = Sum / ((float)ChildrenLocations.Num());
 
     // Subtract assembly center from each child's relative location.
@@ -846,31 +848,65 @@ void UMeshOperationsBPLibrary::ExportLevelGLTF(bool bEnableQuantization, bool bR
     );
 }
 
-bool UMeshOperationsBPLibrary::GetVerticesLocations(UStaticMeshComponent* In_SMC, int32 LOD_Index, TArray<FVector>& OutVertices)
+bool UMeshOperationsBPLibrary::GetVerticesTransforms(TArray<FTransform>& Out_Transform, UStaticMeshComponent* In_SMC, int32 LOD_Index, bool bUseRelativeLocation)
 {
-    if (IsValid(In_SMC) == true)
-    {
-        FPositionVertexBuffer* PositionVertexBuffer = &In_SMC->GetStaticMesh()->GetRenderData()->LODResources[LOD_Index].VertexBuffers.PositionVertexBuffer;
-
-        FVector3d EachVertices;
-        for (uint32 VertexIndex = 0; VertexIndex < PositionVertexBuffer->GetNumVertices(); VertexIndex++)
-        {
-            EachVertices = In_SMC->GetComponentTransform().TransformPosition((FVector3d)PositionVertexBuffer->VertexPosition(VertexIndex));
-            OutVertices.Add(EachVertices);
-        }
-
-        return true;
-    }
-
-    else
+    if (!IsValid(In_SMC))
     {
         return false;
     }
+
+    FStaticMeshRenderData* RenderData = In_SMC->GetStaticMesh()->GetRenderData();
+
+    if (!RenderData)
+    {
+        return false;
+    }
+
+    const FVector Center_World = In_SMC->Bounds.Origin;
+    const FVector Center_Rel = Center_World - In_SMC->GetComponentLocation();
+
+    FPositionVertexBuffer* PositionVertexBuffer = &RenderData->LODResources[LOD_Index].VertexBuffers.PositionVertexBuffer;
+
+	const size_t NumVertices = PositionVertexBuffer->GetNumVertices();
+    const FTransform ComponentTransform = In_SMC->GetComponentTransform();
+
+	TArray<FTransform> Temp_Transform;
+
+    for (size_t VertexIndex = 0; VertexIndex < NumVertices; VertexIndex++)
+    {
+        FVector VertexLocation;
+        FRotator VertexDirection;
+        FTransform Vertex_Transform;
+
+		if (bUseRelativeLocation)
+		{
+            VertexLocation = (FVector)PositionVertexBuffer->VertexPosition(VertexIndex);
+			VertexDirection = UMeshOperationsBPLibrary::GetDirectionOfVector(Center_Rel, VertexLocation);
+			
+			Vertex_Transform.SetLocation(VertexLocation);
+            Vertex_Transform.SetRotation(VertexDirection.Quaternion());
+		}
+
+		else
+		{
+            VertexLocation = ComponentTransform.TransformPosition((FVector)PositionVertexBuffer->VertexPosition(VertexIndex));
+			VertexDirection = UMeshOperationsBPLibrary::GetDirectionOfVector(Center_World, VertexLocation);
+
+            Vertex_Transform.SetLocation(VertexLocation);
+            Vertex_Transform.SetRotation(VertexDirection.Quaternion());
+		}
+
+        Temp_Transform.Add(Vertex_Transform);
+    }
+
+    Out_Transform = Temp_Transform;
+
+    return true;
 }
 
 bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent*& In_SMC, FVector PivotLocation, UObject* Outer)
 {
-    if (IsValid(In_SMC) == false)
+    if (!IsValid(In_SMC))
     {
         return false;
     }
@@ -1033,4 +1069,11 @@ bool UMeshOperationsBPLibrary::MovePivotsToCenter(USceneComponent* RootComponent
     }
 
     return true;
+}
+
+FRotator UMeshOperationsBPLibrary::GetDirectionOfVector(const FVector& Start, const FVector& End)
+{
+    const FVector NormDirection = FVector(End).GetSafeNormal();
+    const FVector NormUp = FVector(Start).GetSafeNormal();
+    return FRotationMatrix::MakeFromXZ(NormDirection, NormUp).Rotator();
 }

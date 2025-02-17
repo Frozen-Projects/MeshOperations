@@ -71,13 +71,16 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Level As GLTF", ToolTip = "Description.", Keywords = "level, export, gltf, glb"), Category = "File Converters|GLTF")
     static void ExportLevelGLTF(bool bEnableQuantization, bool bResetLocation, bool bResetRotation, bool bResetScale, const FString ExportPath, TSet<AActor*> TargetActors, FDelegateGLTFExport DelegateGLTFExport);
 
-    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Vertices Locations", Keywords = "get, vertex, vertices, locations, positions"), Category = "MeshOperations")
-    static bool GetVerticesLocations(UStaticMeshComponent* In_SMC, int32 LOD_Index, TArray<FVector>& OutVertices);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Vertices Transform", Keywords = "get, vertex, vertices, locations, positions"), Category = "MeshOperations")
+    static bool GetVerticesTransforms(TArray<FTransform>& Out_Transform, UStaticMeshComponent* In_SMC, int32 LOD_Index, bool bUseRelativeLocation);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Set Pivot Location", Keywords = "set, move, pivot, location, static, mesh"), Category = "MeshOperations")
     static bool SetPivotLocation(UPARAM(ref) UStaticMeshComponent*& In_SMC, FVector PivotLocation, UObject* Outer);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Move Pivots To Center", Keywords = "set, move, pivot, location, static, mesh, recursive, center"), Category = "MeshOperations")
     static bool MovePivotsToCenter(USceneComponent* RootComponent, TArray<FString>& ErroredMeshes);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Direction Of Vector", Keywords = "get, direction, vector"), Category = "MeshOperations")
+	static FRotator GetDirectionOfVector(const FVector& Start, const FVector& End);
 
 };
