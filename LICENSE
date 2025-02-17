@@ -5,7 +5,7 @@ This Business Source License (the "License") applies to the source code in this 
 ## 1. Licensed Grant
 Subject to the terms of this License, **the Licensor** hereby grants you, free of charge,
 - the right to use in commercial, non-commercial and academic products,
-- **reproduce, modify, and create derivative works** of **FF_PugiXml** plugin in this repository (the "Plugin"),
+- **reproduce, modify, and create derivative works** of **MeshOperations** plugin in this repository (the "Plugin"),
 solely for non-restricted use cases.
 
 Reproduce, modify and create derivate works mean merely create a **fork** of this repository while pointing reference to original repository and preserving license terms **without selling** it directly.
@@ -36,13 +36,13 @@ THE SOFTWARE IS PROVIDED "AS IS," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 **FAQs**
 
 1. **What is a "competing use case"?**
-   Any use of the Software that creates or powers a product/service that competes with **FF_PUGIXML** such as
+   Any use of the Software that creates or powers a product/service that competes with **MeshOperations** such as
    - sharing it on Gumroad, Unreal Engine Marketplace/Fab and etc. with price tag.
    - sharing it on Gumroad, Unreal Engine Marketplace/Fab and etc. as free but without reference.
-   - publishing on GitHub, GitLab or Bitbucket like public repository platform without forking or giving reference. As it      like the actual developer of the plugin is you.
+   - publishing on GitHub, GitLab or Bitbucket like public repository platform without forking or giving reference. As it like the actual developer of the plugin is you.
 
    But you can use it in your commercial products such as
-   - a commercial game or simulation project with XML processing feature.
+   - a commercial game or simulation project with mesh processing features.
 
 2. **Can I use this Software for personal or educational purposes?**
    Yes, as long as it does not fall under a restricted use case.
