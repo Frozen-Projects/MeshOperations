@@ -19,7 +19,7 @@
 - Move Pivot Location to Center
 - Get Direction of Vector
 --------------------------------------------------------------------------------------------
-## PLATFORM SUPPORT:
+## PLATFORM SUPPORT
 We didn't use any third party library. So, it should work with all platforms but we didn't try other than Windows.
 
 ## ROADMAP
