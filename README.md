@@ -3,7 +3,6 @@
 - Add Scene Component with Name
 - Add Static Mesh Component with Name
 - Add Procedural Mesh Component with Name
-- Create Procedural Mesh from Static Mesh
 --------------------------------------------------------------------------------------------
 - Get Class Name
 - Get Object Name of Packaged Build
@@ -28,4 +27,3 @@ We didn't use any third party library. So, it should work with all platforms but
 
 ## CONTRIBUTIONS
 If you know better approaches feel free to give pull requests.
-
