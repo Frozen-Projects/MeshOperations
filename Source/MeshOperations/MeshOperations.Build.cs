@@ -10,7 +10,7 @@ public class MeshOperations : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
-        UndefinedIdentifierWarningLevel = WarningLevel.Off;
+        CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Off;
         bEnableExceptions = true;
 
         if (UnrealTargetPlatform.Win64 == Target.Platform)
