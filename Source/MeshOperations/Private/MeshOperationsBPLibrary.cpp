@@ -469,6 +469,8 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
 
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
+    StaticMesh->bSupportRayTracing = bSupportRayTracing;
+    StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, TEXT("DefaultMaterialSlot")));
 
     StaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
@@ -488,7 +490,6 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
         }
     );
 
-	// We assume one LOD.
     RenderData->AllocateLODResources(1);
     FStaticMeshLODResources& LOD_Resource = RenderData->LODResources[0];
 
@@ -496,6 +497,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     LOD_Resource.IndexBuffer.SetIndices(U_Indices, EIndexBufferStride::Force32Bit);
 
     // --- POSITION VERTEX BUFFER ---
+  
     const int32 NumPositions = Vertices.Num();
     LOD_Resource.VertexBuffers.PositionVertexBuffer.Init(NumPositions);
     
@@ -504,12 +506,13 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
         LOD_Resource.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) = (FVector3f)Vertices[PositionIndex];
     }
 
+	// --- COLOR VERTEX BUFFER ---
+    LOD_Resource.VertexBuffers.ColorVertexBuffer.InitFromSingleColor(FColor::White, NumPositions);
+
     // --- STATIC MESH VERTEX BUFFER ---
 
     uint32 NumVertices = Vertices.Num();
     LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.SetUseFullPrecisionUVs(true);
-
-    // We assume one UV channel.
     LOD_Resource.VertexBuffers.StaticMeshVertexBuffer.Init(NumVertices, 1);
 
     for (uint32 VertexIndex = 0; VertexIndex < NumVertices; VertexIndex++)
@@ -577,8 +580,6 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
 
     BodySetup->InvalidatePhysicsData();
     BodySetup->CreatePhysicsMeshes();
-
-    StaticMesh->bSupportRayTracing = bSupportRayTracing;
 
     return StaticMesh;
 }
