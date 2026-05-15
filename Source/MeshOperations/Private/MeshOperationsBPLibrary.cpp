@@ -80,7 +80,7 @@ bool UMeshOperationsBPLibrary::GetComponentByName(FName InName, UObject* Owner, 
     }
 }
 
-bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName InName, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
@@ -89,23 +89,17 @@ bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& 
         return false;
     }
 
-	UStaticMeshComponent* StaticMeshComp = NewObject<UStaticMeshComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
+	UStaticMeshComponent* StaticMeshComp = NewObject<UStaticMeshComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
     if (StaticMeshComp == nullptr)
     {
         return false;
     }
 
-    //Set Mobility of Static Mesh Component.
-    StaticMeshComp->SetMobility(Mobility);
-
-    //Render Static Mesh Component.
-    StaticMeshComp->RegisterComponent();
-
-    //Get Root Component.
     USceneComponent* ActorRootForSMC = Outer->GetRootComponent();
 
-    //Create Attachment Rules.
+    StaticMeshComp->SetMobility(Mobility);
+    StaticMeshComp->RegisterComponent();
     StaticMeshComp->AttachToComponent(ActorRootForSMC, FAttachmentTransformRules(Attachment_Rule, true));
 
     if (Manual_Attachment == true)
@@ -113,14 +107,18 @@ bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& 
         StaticMeshComp->SetRelativeTransform(RelativeTransform);
     }
 
-    //Output Pins.
+    if (IsValid(In_Mesh))
+    {
+        StaticMeshComp->SetStaticMesh(In_Mesh);
+    }
+
     Out_Comp = StaticMeshComp;
-    Out_Name = InName;
+    Out_Name = In_Name;
 
     return true;
 }
 
-bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName InName, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
@@ -129,7 +127,7 @@ bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, 
         return false;
     }
 
-    USceneComponent* SceneComp = NewObject<USceneComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
+    USceneComponent* SceneComp = NewObject<USceneComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
     if (SceneComp == nullptr)
     {
@@ -152,11 +150,11 @@ bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, 
     }
 
     Out_Comp = SceneComp;
-    Out_Name = InName;
+    Out_Name = In_Name;
     return true;
 }
 
-bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FName InName, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
@@ -165,7 +163,7 @@ bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*
         return false;
     }
 
-    UProceduralMeshComponent* ProcMeshComp = NewObject<UProceduralMeshComponent>(Outer, InName.ToString().IsEmpty() ? NAME_None : InName);
+    UProceduralMeshComponent* ProcMeshComp = NewObject<UProceduralMeshComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
     if (ProcMeshComp == nullptr)
     {
@@ -188,7 +186,7 @@ bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*
 
     //Output Pins
     Out_Comp = ProcMeshComp;
-    Out_Name = InName;
+    Out_Name = In_Name;
 
     return true;
 }
@@ -552,7 +550,8 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     // --- AGGREGATED COLLISION GEOMETRY (AggGeom) ---
     UBodySetup* BodySetup = NewObject<UBodySetup>(StaticMesh, NAME_None, RF_Public | RF_Standalone);
     StaticMesh->SetBodySetup(BodySetup);
-    BodySetup->CollisionTraceFlag = CTF_UseDefault;
+    BodySetup->CollisionTraceFlag = CTF_UseSimpleAsComplex;
+	BodySetup->bHasCookedCollisionData = true;
 
     // Clear any existing collision elements.
     BodySetup->AggGeom.BoxElems.Empty();
