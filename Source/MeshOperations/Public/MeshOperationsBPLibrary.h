@@ -47,7 +47,7 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     static UStaticMesh* GSM_Description(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing = false);
     static UStaticMesh* GSM_RenderData(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing = false);
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Static Mesh", Keywords = "generate, static, mesh"), Category = "Frozen Forest|Mesh Operations")
     static UStaticMesh* GenerateStaticMesh(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription = false, bool bSupportRayTracing = false);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Delete Empty Roots", Keywords = "optimize,hierarchy,empty,root,roots"), Category = "Frozen Forest|Mesh Operations")
