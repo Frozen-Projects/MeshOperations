@@ -80,12 +80,11 @@ bool UMeshOperationsBPLibrary::GetComponentByName(FName InName, UObject* Owner, 
     }
 }
 
-bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
         Out_Comp = nullptr;
-        Out_Name = NAME_None;
         return false;
     }
 
@@ -96,15 +95,21 @@ bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& 
         return false;
     }
 
-    USceneComponent* ActorRootForSMC = Outer->GetRootComponent();
-
     StaticMeshComp->SetMobility(Mobility);
-    StaticMeshComp->RegisterComponent();
-    StaticMeshComp->AttachToComponent(ActorRootForSMC, FAttachmentTransformRules(Attachment_Rule, true));
 
-    if (Manual_Attachment == true)
+    if (!Manual_Attachment)
     {
-        StaticMeshComp->SetRelativeTransform(RelativeTransform);
+        USceneComponent* Root = Outer->GetRootComponent();
+
+        if (IsValid(Root))
+        {
+            StaticMeshComp->AttachToComponent(Root, FAttachmentTransformRules(Attachment_Rule, true));
+        }
+
+        else
+        {
+            Outer->SetRootComponent(StaticMeshComp);
+        }
     }
 
     if (IsValid(In_Mesh))
@@ -112,18 +117,18 @@ bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& 
         StaticMeshComp->SetStaticMesh(In_Mesh);
     }
 
-    Out_Comp = StaticMeshComp;
-    Out_Name = In_Name;
+    StaticMeshComp->SetRelativeTransform(RelativeTransform);
+    StaticMeshComp->RegisterComponent();
 
+    Out_Comp = StaticMeshComp;
     return true;
 }
 
-bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, AActor* Outer, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
         Out_Comp = nullptr;
-        Out_Name = NAME_None;
         return false;
     }
 
@@ -134,32 +139,34 @@ bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, 
         return false;
     }
 
-    //Set Mobility of Static Mesh Component.
     SceneComp->SetMobility(Mobility);
 
-    //Get Root Component.
-    USceneComponent* ActorRootForSC = Outer->GetRootComponent();
-
-    //Create Attachment Rules.
-    SceneComp->AttachToComponent(ActorRootForSC, FAttachmentTransformRules(Attachment_Rule, true));
-
-    if (Manual_Attachment == true)
+    if (!Manual_Attachment)
     {
-        //Set Realtive Transform.
-        SceneComp->SetRelativeTransform(RelativeTransform);
+        USceneComponent* Root = Outer->GetRootComponent();
+
+        if (IsValid(Root))
+        {
+            SceneComp->AttachToComponent(Root, FAttachmentTransformRules(Attachment_Rule, true));
+        }
+
+        else
+        {
+            Outer->SetRootComponent(SceneComp);
+        }
     }
 
+    SceneComp->SetRelativeTransform(RelativeTransform);
+
     Out_Comp = SceneComp;
-    Out_Name = In_Name;
     return true;
 }
 
-bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, FName& Out_Name, AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
+bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
         Out_Comp = nullptr;
-        Out_Name = NAME_None;
         return false;
     }
 
@@ -170,24 +177,29 @@ bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*
         return false;
     }
 
-    //Set Mobility of Static Mesh Component.
     ProcMeshComp->SetMobility(Mobility);
-
     ProcMeshComp->bUseAsyncCooking = bUseAsyncCooking;
     ProcMeshComp->bUseComplexAsSimpleCollision = bUseComplexCollisionAsSimple;
-    ProcMeshComp->RegisterComponent();
-    ProcMeshComp->AttachToComponent(Outer->GetRootComponent(), FAttachmentTransformRules(Attachment_Rule, true));
 
-    if (Manual_Attachment == true)
+    if (!Manual_Attachment)
     {
-        //Set Realtive Transform.
-        ProcMeshComp->SetRelativeTransform(Relative_Transform);
+        USceneComponent* Root = Outer->GetRootComponent();
+
+        if (IsValid(Root))
+        {
+            ProcMeshComp->AttachToComponent(Root, FAttachmentTransformRules(Attachment_Rule, true));
+        }
+
+        else
+        {
+            Outer->SetRootComponent(ProcMeshComp);
+        }
     }
 
-    //Output Pins
-    Out_Comp = ProcMeshComp;
-    Out_Name = In_Name;
+    ProcMeshComp->SetRelativeTransform(Relative_Transform);
+    ProcMeshComp->RegisterComponent();
 
+    Out_Comp = ProcMeshComp;
     return true;
 }
 

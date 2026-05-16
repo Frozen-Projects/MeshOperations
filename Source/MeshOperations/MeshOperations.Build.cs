@@ -1,5 +1,3 @@
-// Some copyright should be here...
-
 using System;
 using System.IO;
 using UnrealBuildTool;
@@ -21,10 +19,13 @@ public class MeshOperations : ModuleRules
         PublicDependencyModuleNames.AddRange(
             new string[]
             {
-                // ... add other public dependencies that you statically link with here ...
 				"Core",
-			}
-			);
+                "MeshDescription",
+                "StaticMeshDescription",
+                "MeshConversion",
+                "ProceduralMeshComponent",
+                "GLTFExporter",
+            });
 			
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
@@ -33,22 +34,8 @@ public class MeshOperations : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-                "GLTFExporter",
                 "RHI",
                 "RenderCore",
-                "MeshDescription",
-                "StaticMeshDescription",
-                "MeshConversion",
-                "ProceduralMeshComponent",
-				// ... add private dependencies that you statically link with here ...	
-			}
-			);
-			
-		DynamicallyLoadedModuleNames.AddRange(
-			new string[]
-			{
-				// ... add any modules that your module loads dynamically here ...
-			}
-			);
+			});
 	}
 }

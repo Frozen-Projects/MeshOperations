@@ -19,7 +19,6 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "Rendering/PositionVertexBuffer.h"
 
-// GLTF Exporter
-#include "Exporters/GLTFExporter.h"					// FDelegateGLTFExport -> Export Messages.
+#include "Exporters/GLTFExporter.h"
 #include "Builders/GLTFBuilder.h"
 #include "UserData/GLTFMaterialUserData.h"
