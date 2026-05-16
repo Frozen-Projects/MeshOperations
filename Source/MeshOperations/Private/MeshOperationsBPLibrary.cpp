@@ -436,7 +436,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
 
     // Create a new UStaticMesh with the provided name.
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : FName(*Mesh_Name), RF_Public | RF_Standalone);
-    StaticMesh->GetStaticMaterials().Add(FStaticMaterial());
+    StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, TEXT("DefaultMaterialSlot")));
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
     StaticMesh->bSupportRayTracing = bSupportRayTracing;
@@ -544,7 +544,11 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     // --- BOUNDS ---
     FBox BoundingBox(Vertices);
     RenderData->Bounds = FBoxSphereBounds(BoundingBox);
-    RenderData->InitializeRayTracingRepresentationFromRenderingLODs();
+   
+    if (StaticMesh->bSupportRayTracing)
+    {
+        RenderData->InitializeRayTracingRepresentationFromRenderingLODs();
+    }
 
     // Finalize render data.
     StaticMesh->InitResources();
