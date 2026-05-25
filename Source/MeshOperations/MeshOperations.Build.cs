@@ -25,6 +25,7 @@ public class MeshOperations : ModuleRules
                 "MeshConversion",
                 "ProceduralMeshComponent",
                 "GLTFExporter",
+                "UMG",
             });
 			
 		PrivateDependencyModuleNames.AddRange(
@@ -36,6 +37,6 @@ public class MeshOperations : ModuleRules
 				"SlateCore",
                 "RHI",
                 "RenderCore",
-			});
+            });
 	}
 }

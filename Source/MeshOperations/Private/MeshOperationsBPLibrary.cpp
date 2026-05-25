@@ -14,55 +14,35 @@ FString UMeshOperationsBPLibrary::GetClassName(const UObject* Object)
     return Class->GetName();
 }
 
-bool UMeshOperationsBPLibrary::GetObjectNameForPackage(USceneComponent* Object, bool bUseReadableName, FString Delimeter, FString& OutName)
+bool UMeshOperationsBPLibrary::GetObjectNameForPackage(FString& Out_Name, USceneComponent* Object, bool bUseReadableName)
 {
-    if (IsValid(Object) == false)
+    if (!IsValid(Object))
     {
         return false;
     }
-    
-    FString ObjectName;
-    if (bUseReadableName == true)
+
+    const FString ObjectName = bUseReadableName ? Object->GetReadableName() : Object->GetName();
+
+#if WITH_EDITOR
+   
+    Out_Name = ObjectName;
+    return true;
+
+#else
+   
+    int32 LastUnderscoreIndex;
+
+    // Packaged projects have "_SOMETHING" like suffixes on component names, so we need to remove those to get the original name of the component.
+    if (ObjectName.FindLastChar(TEXT('_'), LastUnderscoreIndex))
     {
-        ObjectName = Object->GetReadableName();
+        Out_Name = ObjectName.Left(LastUnderscoreIndex);
+        return !Out_Name.IsEmpty();
     }
 
-    else
-    {
-        ObjectName = Object->GetName();
-    }
+    Out_Name = ObjectName;
+    return !Out_Name.IsEmpty();
 
-    FString GeneratedName;
-    TArray<FString> NameSections;
-    ObjectName.ParseIntoArray(NameSections, *Delimeter, true);
-
-    if (NameSections.Num() > 1)
-    {
-        if (WITH_EDITOR == true)
-        {
-            NameSections.RemoveAt(NameSections.Num() - 1);
-            GeneratedName = FString::Join(NameSections, *Delimeter);
-        }
-
-        else
-        {
-            for (int32 SectionID = 0; SectionID < 1; SectionID++)
-            {
-                NameSections.RemoveAt(NameSections.Num() - 1 - SectionID);
-            }
-
-            GeneratedName = FString::Join(NameSections, *Delimeter);
-        }
-
-        OutName = GeneratedName;
-
-        return true;
-    }
-
-    else
-    {
-        return false;
-    }
+#endif
 }
 
 bool UMeshOperationsBPLibrary::GetComponentByName(FName InName, UObject* Owner, USceneComponent*& OutComponent)
