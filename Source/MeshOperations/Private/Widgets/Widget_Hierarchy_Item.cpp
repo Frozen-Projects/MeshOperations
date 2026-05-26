@@ -1,4 +1,5 @@
 #include "Widgets/Widget_Hierarchy_Item.h"
+#include "Widgets/Widget_Hierarchy.h"
 
 void UWidget_Hierarchy_Item::NativePreConstruct()
 {
@@ -44,6 +45,14 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 	}
 
 	this->Title_Comp->SetText(FText::FromString(ObjectName));
+	
+	if (IsValid(this->Main_Parent))
+	{
+		FHierarchy_Item_Struct Hierarchy_Item_Struct;
+		Hierarchy_Item_Struct.Name = ObjectName.ToLower();
+		Hierarchy_Item_Struct.Widget = this;
+		this->Main_Parent->Hierarchy_Items.Add(MoveTemp(Hierarchy_Item_Struct));
+	}
 
 	TArray<USceneComponent*> Children_Components;
 	this->Target->GetChildrenComponents(false, Children_Components);
@@ -55,12 +64,8 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 		if (IsValid(Child_Widget))
 		{
 			Child_Widget->Target = Child_Comp;
+			Child_Widget->Main_Parent = this->Main_Parent;
 			this->Children->AddChild(Child_Widget);
-		}
-
-		else
-		{
-			continue;
 		}
 	}
 

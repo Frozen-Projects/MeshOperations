@@ -24,6 +24,9 @@
 
 #include "Widget_Hierarchy_Item.generated.h"
 
+// Forward Declarations.
+class UWidget_Hierarchy;
+
 /*
 * Widget Order
 * CanvasPanel > ExpandableArea > 
@@ -74,4 +77,23 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Target = nullptr;
+
+	UPROPERTY(BlueprintReadWrite)
+	UWidget_Hierarchy* Main_Parent = nullptr;
+
+};
+
+USTRUCT(BlueprintType)
+struct FHierarchy_Item_Struct
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Name;
+
+	UPROPERTY(BlueprintReadWrite)
+	UWidget_Hierarchy_Item* Widget = nullptr;
+
 };

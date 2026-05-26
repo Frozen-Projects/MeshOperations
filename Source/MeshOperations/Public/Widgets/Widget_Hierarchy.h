@@ -8,6 +8,7 @@
 #include "Runtime/UMG/Public/UMG.h"
 
 #include "Components/ScrollBox.h"
+#include "Components/EditableTextBox.h"
 
 #include "Widgets/Widget_Hierarchy_Item.h"
 
@@ -20,7 +21,29 @@ class MESHOPERATIONS_API UWidget_Hierarchy : public UUserWidget
 	
 private:
 
+	UPROPERTY()
+	TArray<UWidget_Hierarchy_Item*> Found_Widgets;
+
+	UPROPERTY()
+	int32 Current_Index = 0;
+
+	UPROPERTY()
+	int32 Max_Index = 0;
+
+	UFUNCTION()
 	virtual bool Hierarchy_Generator();
+	
+	UFUNCTION()
+	virtual TArray<UWidget_Hierarchy_Item*> Find_Widgets(const FString& In_Name);
+
+	UFUNCTION()
+	void On_Search_Commited(const FText& In_Text, ETextCommit::Type In_Commit_Type);
+
+	UFUNCTION()
+	void On_Search_Next();
+
+	UFUNCTION()
+	void On_Search_Previous();
 
 public:
 
@@ -42,7 +65,25 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UScrollBox* Hierarchy = nullptr;
 
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UEditableTextBox* Search_Box = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* Current_Index_Text = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* Max_Index_Text = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UButton* Search_Next = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UButton* Search_Previous = nullptr;
+
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Root = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FHierarchy_Item_Struct> Hierarchy_Items;
 
 };
