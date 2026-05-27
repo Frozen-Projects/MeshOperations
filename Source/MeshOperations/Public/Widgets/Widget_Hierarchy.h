@@ -7,8 +7,11 @@
 
 #include "Runtime/UMG/Public/UMG.h"
 
+#include "Components/Border.h"
 #include "Components/ScrollBox.h"
+#include "Components/HorizontalBox.h"
 #include "Components/EditableTextBox.h"
+#include "Components/CanvasPanelSlot.h"
 
 #include "Widgets/Widget_Hierarchy_Item.h"
 
@@ -37,13 +40,16 @@ private:
 	virtual TArray<UWidget_Hierarchy_Item*> Find_Widgets(const FString& In_Name);
 
 	UFUNCTION()
-	void On_Search_Commited(const FText& In_Text, ETextCommit::Type In_Commit_Type);
+	void On_Search_Committed(const FText& In_Text, ETextCommit::Type In_Commit_Type);
 
 	UFUNCTION()
 	void On_Search_Next();
 
 	UFUNCTION()
 	void On_Search_Previous();
+
+	UFUNCTION()
+	bool Toggle_Frame(UCanvasPanel* In_Canvas, bool bDisable);
 
 public:
 
@@ -53,12 +59,6 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
-	UPROPERTY(BlueprintReadOnly)
-	UWidget_Hierarchy_Item* Root_Item_Widget = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
-	TSubclassOf<UWidget_Hierarchy_Item> Hierarchy_Item_Class;
-
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* Canvas_Panel = nullptr;
 
@@ -66,13 +66,13 @@ public:
 	UScrollBox* Hierarchy = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UHorizontalBox* Search_Area = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UEditableTextBox* Search_Box = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTextBlock* Current_Index_Text = nullptr;
-
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTextBlock* Max_Index_Text = nullptr;
+	UTextBlock* Index_Text = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Search_Next = nullptr;
@@ -80,10 +80,19 @@ public:
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Search_Previous = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	USceneComponent* Root = nullptr;
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UBorder* Item_Frame = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	UWidget_Hierarchy_Item* Root_Item_Widget = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FHierarchy_Item_Struct> Hierarchy_Items;
+
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	USceneComponent* Root = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
+	TSubclassOf<UWidget_Hierarchy_Item> Hierarchy_Item_Class;
 
 };

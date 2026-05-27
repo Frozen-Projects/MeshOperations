@@ -10,15 +10,12 @@
 
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "Components/TextBlock.h"
-#include "Components/ExpandableArea.h"
-#include "Components/VerticalBox.h"
-#include "Components/HorizontalBox.h"
 #include "Components/Button.h"
+#include "Components/SizeBox.h"
+#include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
 #include "Components/RetainerBox.h"
-#include "Components/EditableTextBox.h"
-#include "Components/Overlay.h"
-#include "Components/ComboboxString.h"
+#include "Components/ExpandableArea.h"
 
 #include "MeshOperationsBPLibrary.h"
 
@@ -29,9 +26,9 @@ class UWidget_Hierarchy;
 
 /*
 * Widget Order
-* CanvasPanel > ExpandableArea > 
-	Header > Overlay > Button (Left Align Horizontally + Fill Vertically) > Title (Left Align Horizontally + Center Align Vertically)
-	Body > RetainerBox > VerticalBox > Children
+* Main_Canvas > ExpandableArea > 
+	Header > Header_Canvas > Button (Size to Content) > Title (Left Align Horizontally + Center Align Vertically)
+	Body > Size_Box > Retainer_Box > Children
 */
 UCLASS()
 class MESHOPERATIONS_API UWidget_Hierarchy_Item : public UUserWidget
@@ -52,16 +49,13 @@ public:
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UCanvasPanel* Canvas_Panel = nullptr;
+	UCanvasPanel* Main_Canvas = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UCanvasPanel* Header_Canvas = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UExpandableArea* Expandable_Area = nullptr;
-
-	/*
-	* We use this to align button based on title's width.
-	*/
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UOverlay* Align_Overlay = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Button_Comp = nullptr;
@@ -71,6 +65,12 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UVerticalBox* Children = nullptr;
+
+	/*
+	* We use this to prevent "The requested size for SRetainerWidget is 0." error. Min desired height and width should be greater than 0.
+	*/
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	USizeBox* Size_Box = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	URetainerBox* Retainer_Box = nullptr;

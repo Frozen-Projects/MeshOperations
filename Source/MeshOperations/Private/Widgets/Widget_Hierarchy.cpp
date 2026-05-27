@@ -14,10 +14,9 @@ void UWidget_Hierarchy::NativeConstruct()
 		UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
 	}
 
-	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Hierarchy::On_Search_Commited);
+	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Hierarchy::On_Search_Committed);
 	this->Search_Next->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Next);
-	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Previous);
-}
+	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Previous);}
 
 void UWidget_Hierarchy::NativeDestruct()
 {
@@ -50,6 +49,7 @@ bool UWidget_Hierarchy::Hierarchy_Generator()
 		this->Root_Item_Widget->Main_Parent = this;
 		this->Root_Item_Widget->Target = Child_Comp;
 		this->Hierarchy->AddChild(this->Root_Item_Widget);
+		this->Root_Item_Widget->SetPadding(FMargin(5.f));
 	}
 
 	return true;
@@ -86,12 +86,26 @@ TArray<UWidget_Hierarchy_Item*> UWidget_Hierarchy::Find_Widgets(const FString& I
 	return Result;
 }
 
-void UWidget_Hierarchy::On_Search_Commited(const FText& In_Text, ETextCommit::Type In_Commit_Type)
+void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::Type In_Commit_Type)
 {
 	TArray<UWidget*> Children = this->Hierarchy->GetAllChildren();
 
 	if (Children.IsEmpty())
 	{
+		return;
+	}
+
+	else if (In_Text.IsEmpty())
+	{
+		this->Current_Index = 0;
+		this->Max_Index = 0;
+		this->Found_Widgets.Empty();
+		
+		const FString Index_String = FString::Printf(TEXT("%d of %d"), 0, 0);
+		this->Index_Text->SetText(FText::FromString(Index_String));
+
+		this->Toggle_Frame(this->Canvas_Panel, true);
+
 		return;
 	}
 
@@ -108,20 +122,27 @@ void UWidget_Hierarchy::On_Search_Commited(const FText& In_Text, ETextCommit::Ty
 						if (!Temp_Found.IsEmpty())
 						{
 							this->Max_Index = Temp_Found.Num() - 1;
-							this->Hierarchy->ScrollWidgetIntoView(Temp_Found[0]);
+							
+							UWidget_Hierarchy_Item* First_Item = Temp_Found[0];
+							
+							this->Hierarchy->ScrollWidgetIntoView(First_Item);
 							this->Found_Widgets = MoveTemp(Temp_Found);
 
-							this->Current_Index_Text->SetText(FText::FromString(FString::FromInt(1)));
-							this->Max_Index_Text->SetText(FText::FromString(FString::FromInt(this->Max_Index + 1)));
+							const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
+							this->Index_Text->SetText(FText::FromString(Index_String));
+
+							this->Toggle_Frame(First_Item->Header_Canvas, false);
 						}
 
 						else
 						{
-							this->Found_Widgets.Empty();
 							this->Max_Index = 0;
+							this->Found_Widgets.Empty();
+	
+							const FString Index_String = FString::Printf(TEXT("%d of %d"), 0, 0);
+							this->Index_Text->SetText(FText::FromString(Index_String));
 
-							this->Current_Index_Text->SetText(FText::FromString(FString::FromInt(0)));
-							this->Max_Index_Text->SetText(FText::FromString(FString::FromInt(0)));
+							this->Toggle_Frame(this->Canvas_Panel, true);
 						}
 					}
 				);
@@ -147,11 +168,14 @@ void UWidget_Hierarchy::On_Search_Next()
 		this->Current_Index++;
 	}
 
-	this->Current_Index_Text->SetText(FText::FromString(FString::FromInt(this->Current_Index + 1)));
+	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
+	this->Index_Text->SetText(FText::FromString(Index_String));
+	
 	UWidget_Hierarchy_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 
 	if (IsValid(Current_Item))
 	{
+		this->Toggle_Frame(Current_Item->Header_Canvas, false);
 		this->Hierarchy->ScrollWidgetIntoView(Current_Item);
 	}
 }
@@ -173,11 +197,56 @@ void UWidget_Hierarchy::On_Search_Previous()
 		this->Current_Index--;
 	}
 
-	this->Current_Index_Text->SetText(FText::FromString(FString::FromInt(this->Current_Index + 1)));
+	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
+	this->Index_Text->SetText(FText::FromString(Index_String));
 	UWidget_Hierarchy_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 	
 	if (IsValid(Current_Item))
 	{
+		this->Toggle_Frame(Current_Item->Header_Canvas, false);
 		this->Hierarchy->ScrollWidgetIntoView(Current_Item);
+	}
+}
+
+bool UWidget_Hierarchy::Toggle_Frame(UCanvasPanel* In_Canvas, bool bDisable)
+{
+	if (!IsValid(In_Canvas))
+	{
+		return false;
+	}
+
+	In_Canvas->AddChild(this->Item_Frame);
+	this->Item_Frame->SetVisibility(bDisable ? ESlateVisibility::Collapsed : ESlateVisibility::SelfHitTestInvisible);
+	UCanvasPanelSlot* Canvas_Slot = Cast<UCanvasPanelSlot>(this->Item_Frame->Slot);
+
+	if (!IsValid(Canvas_Slot))
+	{
+		return false;
+	}
+	
+	FAnchors FullAnchors;
+
+	if (!bDisable)
+	{
+		FullAnchors.Minimum = FVector2D(0.0f, 0.0f);
+		FullAnchors.Maximum = FVector2D(1.0f, 1.0f);
+
+		Canvas_Slot->SetAnchors(FullAnchors);
+		Canvas_Slot->SetOffsets(FMargin(0.0f, 0.0f, 0.0f, 0.0f));
+		Canvas_Slot->SetAlignment(FVector2D(0.0f, 0.0f));
+
+		return true;
+	}
+
+	else
+	{
+		FullAnchors.Minimum = FVector2D(0.0f, 0.0f);
+		FullAnchors.Maximum = FVector2D(0.0f, 0.0f);
+
+		Canvas_Slot->SetAnchors(FullAnchors);
+		Canvas_Slot->SetOffsets(FMargin(0.0f, 0.0f, 0.0f, 0.0f));
+		Canvas_Slot->SetAlignment(FVector2D(0.0f, 0.0f));
+
+		return true;
 	}
 }

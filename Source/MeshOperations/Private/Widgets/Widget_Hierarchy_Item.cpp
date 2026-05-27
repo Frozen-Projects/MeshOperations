@@ -66,6 +66,7 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 			Child_Widget->Target = Child_Comp;
 			Child_Widget->Main_Parent = this->Main_Parent;
 			this->Children->AddChild(Child_Widget);
+			Child_Widget->SetPadding(FMargin(5.f));
 		}
 	}
 
