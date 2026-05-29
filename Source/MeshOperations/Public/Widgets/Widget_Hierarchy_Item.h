@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Runtime/UMG/Public/UMG.h"
 
 #include "HAL/PlatformApplicationMisc.h"
 #include "Kismet/GameplayStatics.h"
-
-#include "Runtime/UMG/Public/UMG.h"
 
 #include "Components/Button.h"
 #include "Components/SizeBox.h"
@@ -18,6 +17,7 @@
 #include "Components/ExpandableArea.h"
 
 #include "MeshOperationsBPLibrary.h"
+#include "Widgets/Widget_Hierarchy_Metadata.h"
 
 #include "Widget_Hierarchy_Item.generated.h"
 
@@ -40,6 +40,9 @@ private:
 	UFUNCTION()
 	virtual bool Hierarchy_Generator();
 
+	UFUNCTION()
+	virtual void On_Select();
+
 public:
 
 	virtual void NativePreConstruct() override;
@@ -52,10 +55,16 @@ public:
 	UCanvasPanel* Main_Canvas = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UExpandableArea* Main_Expandable = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* Header_Canvas = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UExpandableArea* Expandable_Area = nullptr;
+	UExpandableArea* Metadata_Expandable = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UVerticalBox* Metadata_List = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Button_Comp = nullptr;
@@ -80,6 +89,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	UWidget_Hierarchy* Main_Parent = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
+	TSubclassOf<UWidget_Hierarchy_Metadata> Hierarchy_Metadata_Class;
 
 };
 

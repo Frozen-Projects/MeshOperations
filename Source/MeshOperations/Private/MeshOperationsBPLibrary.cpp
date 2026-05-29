@@ -340,7 +340,7 @@ bool UMeshOperationsBPLibrary::GenerateWave(bool bIsSin, double Amplitude, doubl
     return true;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
 {
     if (Vertices.IsEmpty())
     {
@@ -427,7 +427,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     }
 
     // Create a new UStaticMesh with the provided name.
-    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : FName(*Mesh_Name), RF_Public | RF_Standalone);
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsNone() ? NAME_None : Mesh_Name, RF_Public | RF_Standalone);
     StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, TEXT("DefaultMaterialSlot")));
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
@@ -450,9 +450,9 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FString Mesh_Name, const 
     return StaticMesh;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
 {
-    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsEmpty() ? NAME_None : (FName)Mesh_Name, RF_Public | RF_Standalone);
+    UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsNone() ? NAME_None : Mesh_Name, RF_Public | RF_Standalone);
 
     if (!StaticMesh)
     {
@@ -580,7 +580,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FString Mesh_Name, const T
     return StaticMesh;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FString Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription, bool bSupportRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription, bool bSupportRayTracing)
 {
     if (bUseDescription)
     {

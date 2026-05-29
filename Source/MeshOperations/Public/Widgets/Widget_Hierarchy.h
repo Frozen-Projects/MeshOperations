@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-
 #include "Runtime/UMG/Public/UMG.h"
 
 #include "Components/Border.h"
@@ -94,5 +93,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
 	TSubclassOf<UWidget_Hierarchy_Item> Hierarchy_Item_Class;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
+	TSubclassOf<UWidget_Hierarchy_Metadata> Hierarchy_Metadata_Class;
 
 };

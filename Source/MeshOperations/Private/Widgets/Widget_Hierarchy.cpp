@@ -46,6 +46,7 @@ bool UWidget_Hierarchy::Hierarchy_Generator()
 	for (USceneComponent* Child_Comp : Children_Components)
 	{
 		this->Root_Item_Widget = CreateWidget<UWidget_Hierarchy_Item>(this, this->Hierarchy_Item_Class);
+		this->Root_Item_Widget->Hierarchy_Metadata_Class = this->Hierarchy_Metadata_Class;
 		this->Root_Item_Widget->Main_Parent = this;
 		this->Root_Item_Widget->Target = Child_Comp;
 		this->Hierarchy->AddChild(this->Root_Item_Widget);

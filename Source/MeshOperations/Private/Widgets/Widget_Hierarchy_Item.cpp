@@ -10,7 +10,12 @@ void UWidget_Hierarchy_Item::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	if (!this->Hierarchy_Generator())
+	if (this->Hierarchy_Generator())
+	{
+		this->Button_Comp->OnClicked.AddDynamic(this, &UWidget_Hierarchy_Item::On_Select);
+	}
+
+	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
 	}
@@ -45,6 +50,22 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 	}
 
 	this->Title_Comp->SetText(FText::FromString(ObjectName));
+
+	if (!this->Target->ComponentTags.IsEmpty())
+	{
+		for (const FName Each_Metadata : this->Target->ComponentTags)
+		{
+			UWidget_Hierarchy_Metadata* Each_Meta_Widget = CreateWidget<UWidget_Hierarchy_Metadata>(this, this->Hierarchy_Metadata_Class);
+
+			if (IsValid(Each_Meta_Widget))
+			{
+				const FString Metadata_String = Each_Metadata.ToString();
+				Each_Meta_Widget->Title_Metadata->SetText(FText::FromString(Metadata_String));
+				this->Metadata_List->AddChild(Each_Meta_Widget);
+				Each_Meta_Widget->SetPadding(FMargin(75.f, 5.f, 5.f, 5.f));
+			}
+		}
+	}
 	
 	if (IsValid(this->Main_Parent))
 	{
@@ -65,10 +86,21 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 		{
 			Child_Widget->Target = Child_Comp;
 			Child_Widget->Main_Parent = this->Main_Parent;
+			Child_Widget->Hierarchy_Metadata_Class = this->Hierarchy_Metadata_Class;
 			this->Children->AddChild(Child_Widget);
 			Child_Widget->SetPadding(FMargin(5.f));
 		}
 	}
 
 	return true;
+}
+
+void UWidget_Hierarchy_Item::On_Select()
+{
+	if (!IsValid(this->Target))
+	{
+		return;
+	}
+
+	// Implement gizmo system.
 }
