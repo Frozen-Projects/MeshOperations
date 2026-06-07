@@ -27,13 +27,13 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     static MESHOPERATIONS_API bool GetComponentByName(FName InName, UObject* Owner, USceneComponent*& OutComponent);
         
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "AddStaticMeshCompWithName", Keywords = "static,mesh,component,name"), Category = "Frozen Forest|Mesh Operations")
-    static MESHOPERATIONS_API bool AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name = NAME_None, bool Manual_Attachment = false, EAttachmentRule Attachment_Rule = EAttachmentRule::KeepWorld, EComponentMobility::Type Mobility = EComponentMobility::Movable);
+    static MESHOPERATIONS_API UStaticMeshComponent* AddStaticMeshCompWithName(AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name = NAME_None, bool Manual_Attachment = false, EAttachmentRule Attachment_Rule = EAttachmentRule::KeepWorld, EComponentMobility::Type Mobility = EComponentMobility::Movable);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "AddSceneCompWithName", Keywords = "scene,component,mesh,name"), Category = "Frozen Forest|Mesh Operations")
-    static MESHOPERATIONS_API bool AddSceneCompWithName(USceneComponent*& Out_Comp, AActor* Outer, FTransform RelativeTransform, FName In_Name = NAME_None, bool Manual_Attachment = false, EAttachmentRule Attachment_Rule = EAttachmentRule::KeepWorld, EComponentMobility::Type Mobility = EComponentMobility::Movable);
+    static MESHOPERATIONS_API USceneComponent* AddSceneCompWithName(AActor* Outer, FTransform RelativeTransform, FName In_Name = NAME_None, bool Manual_Attachment = false, EAttachmentRule Attachment_Rule = EAttachmentRule::KeepWorld, EComponentMobility::Type Mobility = EComponentMobility::Movable);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "AddProcMeshCompWithName", Keywords = "procedural,mesh,component,name"), Category = "Frozen Forest|Mesh Operations")
-    static MESHOPERATIONS_API bool AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility = EComponentMobility::Movable);
+    static MESHOPERATIONS_API UProceduralMeshComponent* AddProcMeshCompWithName(AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility = EComponentMobility::Movable);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Box Mesh At Bottom", Keywords = "generate, mesh, box, at, bottom"), Category = "Frozen Forest|Mesh Operations")
     static MESHOPERATIONS_API void GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>&Triangles, TArray<FVector>&Normals, TArray<FVector2D>&UVs, TArray<FProcMeshTangent>&ProcMeshTangents, TArray<FVector>& Tangents);

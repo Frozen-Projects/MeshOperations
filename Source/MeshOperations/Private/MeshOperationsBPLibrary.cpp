@@ -60,19 +60,18 @@ bool UMeshOperationsBPLibrary::GetComponentByName(FName InName, UObject* Owner, 
     }
 }
 
-bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& Out_Comp, AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+UStaticMeshComponent* UMeshOperationsBPLibrary::AddStaticMeshCompWithName(AActor* Outer, UStaticMesh* In_Mesh, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
-        Out_Comp = nullptr;
-        return false;
+        return nullptr;
     }
 
 	UStaticMeshComponent* StaticMeshComp = NewObject<UStaticMeshComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
     if (StaticMeshComp == nullptr)
     {
-        return false;
+        return nullptr;
     }
 
     StaticMeshComp->SetMobility(Mobility);
@@ -100,23 +99,21 @@ bool UMeshOperationsBPLibrary::AddStaticMeshCompWithName(UStaticMeshComponent*& 
     StaticMeshComp->SetRelativeTransform(RelativeTransform);
     StaticMeshComp->RegisterComponent();
 
-    Out_Comp = StaticMeshComp;
-    return true;
+    return StaticMeshComp;
 }
 
-bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, AActor* Outer, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
+USceneComponent* UMeshOperationsBPLibrary::AddSceneCompWithName(AActor* Outer, FTransform RelativeTransform, FName In_Name, bool Manual_Attachment, EAttachmentRule Attachment_Rule, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
-        Out_Comp = nullptr;
-        return false;
+		return nullptr;
     }
 
     USceneComponent* SceneComp = NewObject<USceneComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
-    if (SceneComp == nullptr)
+    if (!IsValid(SceneComp))
     {
-        return false;
+        return nullptr;
     }
 
     SceneComp->SetMobility(Mobility);
@@ -137,24 +134,21 @@ bool UMeshOperationsBPLibrary::AddSceneCompWithName(USceneComponent*& Out_Comp, 
     }
 
     SceneComp->SetRelativeTransform(RelativeTransform);
-
-    Out_Comp = SceneComp;
-    return true;
+	return SceneComp;
 }
 
-bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*& Out_Comp, AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
+UProceduralMeshComponent* UMeshOperationsBPLibrary::AddProcMeshCompWithName(AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility)
 {
     if (!IsValid(Outer))
     {
-        Out_Comp = nullptr;
-        return false;
+        return nullptr;
     }
 
     UProceduralMeshComponent* ProcMeshComp = NewObject<UProceduralMeshComponent>(Outer, In_Name.ToString().IsEmpty() ? NAME_None : In_Name);
 
-    if (ProcMeshComp == nullptr)
+    if (!IsValid(ProcMeshComp))
     {
-        return false;
+        return nullptr;
     }
 
     ProcMeshComp->SetMobility(Mobility);
@@ -179,8 +173,7 @@ bool UMeshOperationsBPLibrary::AddProcMeshCompWithName(UProceduralMeshComponent*
     ProcMeshComp->SetRelativeTransform(Relative_Transform);
     ProcMeshComp->RegisterComponent();
 
-    Out_Comp = ProcMeshComp;
-    return true;
+    return ProcMeshComp;
 }
 
 void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FProcMeshTangent>& ProcMeshTangents, TArray<FVector>& Tangents)
