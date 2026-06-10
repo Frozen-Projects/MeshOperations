@@ -3,6 +3,11 @@
 void UWidget_Hierarchy::NativePreConstruct()
 {
 	Super::NativePreConstruct();
+
+	this->Search_Type->AddOption(TEXT("Product"));
+	this->Search_Type->AddOption(TEXT("Instance"));
+	this->Search_Type->AddOption(TEXT("Object"));
+	this->Search_Type->SetSelectedOption(TEXT("Product"));
 }
 
 void UWidget_Hierarchy::NativeConstruct()
@@ -16,7 +21,8 @@ void UWidget_Hierarchy::NativeConstruct()
 
 	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Hierarchy::On_Search_Committed);
 	this->Search_Next->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Next);
-	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Previous);}
+	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Previous);
+}
 
 void UWidget_Hierarchy::NativeDestruct()
 {
@@ -50,6 +56,28 @@ bool UWidget_Hierarchy::Hierarchy_Generator()
 	return true;
 }
 
+const FString UWidget_Hierarchy::Get_Search_Type(FHierarchy_Item_Struct In_Item) const
+{
+	if (this->Search_Type->GetSelectedOption() == TEXT("Product"))
+	{
+		return In_Item.Product_Name;
+	}
+
+	else if (this->Search_Type->GetSelectedOption() == TEXT("Instance"))
+	{
+		return In_Item.Instance_Name;
+	}
+
+	else if (this->Search_Type->GetSelectedOption() == TEXT("Object"))
+	{
+		return In_Item.Object_Name;
+	}
+
+	// Add others if needed.
+
+	return FString();
+}
+
 TArray<UWidget_Hierarchy_Item*> UWidget_Hierarchy::Find_Widgets(const FString& In_Name)
 {
 	if (In_Name.IsEmpty())
@@ -65,9 +93,12 @@ TArray<UWidget_Hierarchy_Item*> UWidget_Hierarchy::Find_Widgets(const FString& I
 	const FString Name_Lower = In_Name.ToLower();
 
 	TArray<UWidget_Hierarchy_Item*> Result;
+	
 	for (const FHierarchy_Item_Struct& Each_Item : this->Hierarchy_Items)
 	{
-		if (Each_Item.Name.Contains(Name_Lower, ESearchCase::CaseSensitive))
+		const FString SearchTarget = this->Get_Search_Type(Each_Item).ToLower();
+		
+		if (SearchTarget.Contains(Name_Lower, ESearchCase::CaseSensitive))
 		{
 			Result.Add(Each_Item.Widget);
 		}

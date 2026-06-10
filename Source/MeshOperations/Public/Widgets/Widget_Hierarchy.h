@@ -11,6 +11,7 @@
 #include "Components/HorizontalBox.h"
 #include "Components/EditableTextBox.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/ComboBoxString.h"
 
 #include "Widgets/Widget_Hierarchy_Item.h"
 
@@ -35,6 +36,9 @@ private:
 	UFUNCTION()
 	virtual bool Hierarchy_Generator();
 	
+	UFUNCTION()
+	virtual const FString Get_Search_Type(FHierarchy_Item_Struct In_Item) const;
+
 	UFUNCTION()
 	virtual TArray<UWidget_Hierarchy_Item*> Find_Widgets(const FString& In_Name);
 
@@ -66,6 +70,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UHorizontalBox* Search_Area = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UComboBoxString* Search_Type = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UEditableTextBox* Search_Box = nullptr;

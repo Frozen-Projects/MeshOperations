@@ -70,7 +70,9 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 	if (IsValid(this->Main_Parent))
 	{
 		FHierarchy_Item_Struct Hierarchy_Item_Struct;
-		Hierarchy_Item_Struct.Name = ObjectName.ToLower();
+		Hierarchy_Item_Struct.Object_Name = ObjectName;
+		Hierarchy_Item_Struct.Product_Name = this->Target->ComponentTags.Num() > 0 ? this->Target->ComponentTags[0].ToString() : TEXT("Unnamed_Product");
+		Hierarchy_Item_Struct.Instance_Name = this->Target->ComponentTags.Num() > 1 ? this->Target->ComponentTags[1].ToString() : TEXT("Unnamed_Instance");
 		Hierarchy_Item_Struct.Widget = this;
 		this->Main_Parent->Hierarchy_Items.Add(MoveTemp(Hierarchy_Item_Struct));
 	}

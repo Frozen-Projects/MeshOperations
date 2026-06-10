@@ -103,7 +103,13 @@ struct FHierarchy_Item_Struct
 public:
 
 	UPROPERTY(BlueprintReadWrite)
-	FString Name;
+	FString Object_Name;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Product_Name;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Instance_Name;
 
 	UPROPERTY(BlueprintReadWrite)
 	UWidget_Hierarchy_Item* Widget = nullptr;
