@@ -705,35 +705,22 @@ void UMeshOperationsBPLibrary::DeleteEmptyParents(USceneComponent* AssetRoot, UO
 
 void UMeshOperationsBPLibrary::OptimizeCenter(USceneComponent* AssetRoot)
 {
-    // Array variable for children components.
+    if (!IsValid(AssetRoot))
+    {
+        return;
+    }
+
+    FVector Origin, Extent;
+	AssetRoot->GetOwner()->GetActorBounds(true, Origin, Extent, true);
+	const FVector ActorLocation = AssetRoot->GetOwner()->GetActorLocation();
+	const FVector Offset = ActorLocation - Origin;
+
     TArray<USceneComponent*> Children;
-
-    // Array variable for children locations.
-    TArray<FVector> ChildrenLocations;
-
-    // Get children components of asset root.
     AssetRoot->GetChildrenComponents(false, Children);
 
-    // Add relative locations of children components to children locations array.
-    for (int32 ChildID = 0; ChildID < Children.Num(); ChildID++)
+    for (USceneComponent* Each_Child : Children)
     {
-        ChildrenLocations.Add(Children[ChildID]->GetRelativeLocation());
-    }
-
-    // Calculate assembly center (Relative Location).
-    FVector Sum(0.f);
-    
-    for (int32 ChildID = 0; ChildID < (ChildrenLocations.Num()); ChildID++)
-    {
-        Sum += ChildrenLocations[ChildID];
-    }
-   
-    FVector AssemblyCenter = Sum / ((float)ChildrenLocations.Num());
-
-    // Subtract assembly center from each child's relative location.
-    for (int32 ChildID = 0; ChildID < ChildrenLocations.Num(); ChildID++)
-    {
-        Children[ChildID]->SetRelativeLocation((ChildrenLocations[ChildID] - AssemblyCenter), false, nullptr, ETeleportType::None);
+		Each_Child->AddRelativeLocation(Offset, false, nullptr, ETeleportType::None);
     }
 }
 
@@ -909,7 +896,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
 
     if (!StaticMesh->bAllowCPUAccess)
     {
-        return false;
+        StaticMesh->bAllowCPUAccess = true;
     }
 
     FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
@@ -924,7 +911,8 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
     UStaticMesh* NewStaticMesh = NewObject<UStaticMesh>(Outer ? Outer : GetTransientPackage(), NAME_None, RF_Public);
     NewStaticMesh->bAllowCPUAccess = true;
     NewStaticMesh->NeverStream = true;
-    NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
+	NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
+    NewStaticMesh->SetRayTracingProxySettings(StaticMesh->GetRayTracingProxySettings());
 
     NewStaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* NewRenderData = NewStaticMesh->GetRenderData();
@@ -942,6 +930,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
 
         int32 NumPositions = OriginalLOD.VertexBuffers.PositionVertexBuffer.GetNumVertices();
         NewLOD.VertexBuffers.PositionVertexBuffer.Init(NumPositions);
+        
         for (int32 PositionIndex = 0; PositionIndex < NumPositions; PositionIndex++)
         {
             NewLOD.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) = OriginalLOD.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) + FVector3f(PivotDelta);
@@ -967,6 +956,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
 
         TArray<FColor> Colors;
         OriginalLOD.VertexBuffers.ColorVertexBuffer.GetVertexColors(Colors);
+        
         if (Colors.Num() > 0)
         {
             NewLOD.VertexBuffers.ColorVertexBuffer.InitFromColorArray(Colors);
@@ -976,17 +966,20 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
         {
             FStaticMeshSection& OriginalSection = OriginalLOD.Sections[SectionIndex];
             FStaticMeshSection& NewSection = NewLOD.Sections.AddDefaulted_GetRef();
-            // copy section configuration
             NewSection = OriginalSection;
         }
     }
 
     NewStaticMesh->SetStaticMaterials(StaticMesh->GetStaticMaterials());
-
     NewStaticMesh->InitResources();
-
+    
     NewRenderData->Bounds = RenderData->Bounds;
     NewRenderData->Bounds.Origin += PivotDelta;
+   
+    if (NewStaticMesh->bSupportRayTracing)
+    {
+        NewRenderData->InitializeRayTracingRepresentationFromRenderingLODs();
+    }
 
     NewStaticMesh->CalculateExtendedBounds();
     NewStaticMesh->CreateBodySetup();
@@ -1015,6 +1008,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
         {
             Vertex += PivotDelta;
         }
+
         Convex.UpdateElemBox();
     }
 
@@ -1027,7 +1021,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
 
 bool UMeshOperationsBPLibrary::MovePivotsToCenter(USceneComponent* RootComponent, TArray<FString>& ErroredMeshes)
 {
-    if (IsValid(RootComponent) == false)
+    if (!IsValid(RootComponent))
     {
         return false;
     }
@@ -1035,26 +1029,19 @@ bool UMeshOperationsBPLibrary::MovePivotsToCenter(USceneComponent* RootComponent
     TArray<USceneComponent*> Array_Children;
     RootComponent->GetChildrenComponents(true, Array_Children);
 
-    int32 StaticMeshCount = 0;
-
-    for (int32 ChildIndex = 0; ChildIndex < Array_Children.Num(); ChildIndex++)
+    for (USceneComponent* Each_Child : Array_Children)
     {
-        UStaticMeshComponent* EachMesh = Cast<UStaticMeshComponent>(Array_Children[ChildIndex]);
+        UStaticMeshComponent* Each_Mesh = Cast<UStaticMeshComponent>(Each_Child);
 
-        if (IsValid(EachMesh) == true)
+        if (IsValid(Each_Mesh) == true)
         {
-            if (UMeshOperationsBPLibrary::SetPivotLocation(EachMesh, EachMesh->Bounds.Origin, EachMesh) == false)
+            if (!UMeshOperationsBPLibrary::SetPivotLocation(Each_Mesh, Each_Mesh->Bounds.Origin, Each_Mesh))
             {
-                ErroredMeshes.Add(EachMesh->GetReadableName());
+                FString Errored_Mesh;
+                UMeshOperationsBPLibrary::GetObjectNameForPackage(Errored_Mesh, Each_Mesh);
+                ErroredMeshes.Add(Errored_Mesh);
             }
-
-            StaticMeshCount += 1;
         }
-    }
-
-    if (ErroredMeshes.Num() == StaticMeshCount)
-    {
-        return false;
     }
 
     return true;
@@ -1065,4 +1052,30 @@ FRotator UMeshOperationsBPLibrary::GetDirectionOfVector(const FVector& Start, co
     const FVector NormDirection = FVector(End).GetSafeNormal();
     const FVector NormUp = FVector(Start).GetSafeNormal();
     return FRotationMatrix::MakeFromXZ(NormDirection, NormUp).Rotator();
+}
+
+void UMeshOperationsBPLibrary::GetSceneComponentBounds(FVector& Out_Origin, FVector& Out_Extent, USceneComponent* SceneComponent)
+{
+    if (!IsValid(SceneComponent))
+    {
+        Out_Extent = FVector::ZeroVector;
+        Out_Origin = FVector::ZeroVector;
+        return;
+    }
+
+	TArray<USceneComponent*> Children;
+	SceneComponent->GetChildrenComponents(true, Children);
+
+    FBox TotalBox(ForceInit);
+
+    for (USceneComponent* Each_Child : Children)
+    {
+        if (UPrimitiveComponent* Geometry = Cast<UPrimitiveComponent>(Each_Child))
+        {
+			TotalBox += Geometry->Bounds.GetBox();
+        }
+    }
+
+    Out_Origin = TotalBox.GetCenter();
+    Out_Extent = TotalBox.GetExtent();
 }
