@@ -83,7 +83,7 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
 	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Direction Of Vector", Keywords = "get, direction, vector"), Category = "Frozen Forest|Mesh Operations")
 	static MESHOPERATIONS_API FRotator GetDirectionOfVector(const FVector& Start, const FVector& End);
 
-    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Scene Component Bounds", Keywords = "get, scene, component, bounds"), Category = "Frozen Forest|Mesh Operations")
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Scene Component Bounds", Keywords = "get, scene, component, bounds"), Category = "Frozen Forest|Mesh Operations")
     static MESHOPERATIONS_API void GetSceneComponentBounds(FVector& Out_Origin, FVector& Out_Extent, USceneComponent* SceneComponent);
 
 };
