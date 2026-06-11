@@ -150,6 +150,8 @@ void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::T
 							this->Max_Index = Temp_Found.Num() - 1;
 							
 							UWidget_Hierarchy_Item* First_Item = Temp_Found[0];
+							First_Item->Main_Expandable->SetIsExpanded(false);
+							First_Item->Metadata_Expandable->SetIsExpanded(true);
 							
 							this->Hierarchy->ScrollWidgetIntoView(First_Item);
 							this->Found_Widgets = MoveTemp(Temp_Found);
@@ -201,6 +203,8 @@ void UWidget_Hierarchy::On_Search_Next()
 
 	if (IsValid(Current_Item))
 	{
+		Current_Item->Main_Expandable->SetIsExpanded(false);
+		Current_Item->Metadata_Expandable->SetIsExpanded(true);
 		this->Toggle_Frame(Current_Item->Header_Canvas, false);
 		this->Hierarchy->ScrollWidgetIntoView(Current_Item);
 	}
@@ -229,6 +233,8 @@ void UWidget_Hierarchy::On_Search_Previous()
 	
 	if (IsValid(Current_Item))
 	{
+		Current_Item->Main_Expandable->SetIsExpanded(false);
+		Current_Item->Metadata_Expandable->SetIsExpanded(true);
 		this->Toggle_Frame(Current_Item->Header_Canvas, false);
 		this->Hierarchy->ScrollWidgetIntoView(Current_Item);
 	}

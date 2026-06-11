@@ -1079,3 +1079,16 @@ void UMeshOperationsBPLibrary::GetSceneComponentBounds(FVector& Out_Origin, FVec
     Out_Origin = TotalBox.GetCenter();
     Out_Extent = TotalBox.GetExtent();
 }
+
+bool UMeshOperationsBPLibrary::IsInBounds(USceneComponent* Target_Comp, FVector In_Origin, FVector In_Extent)
+{
+    if (!IsValid(Target_Comp))
+    {
+        return false;
+    }
+
+    FBox MyBox = FBox::BuildAABB(In_Origin, In_Extent);
+	const FVector ComponentLocation = Target_Comp->GetComponentLocation();
+
+	return MyBox.IsInside(ComponentLocation);
+}

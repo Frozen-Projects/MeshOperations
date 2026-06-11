@@ -86,4 +86,7 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintPure, meta = (DisplayName = "Get Scene Component Bounds", Keywords = "get, scene, component, bounds"), Category = "Frozen Forest|Mesh Operations")
     static MESHOPERATIONS_API void GetSceneComponentBounds(FVector& Out_Origin, FVector& Out_Extent, USceneComponent* SceneComponent);
 
+    UFUNCTION(BlueprintPure, meta = (DisplayName = "IsInBounds", Keywords = "is, vector, in, bounds, box, component"), Category = "Frozen Forest|Mesh Operations")
+    static MESHOPERATIONS_API bool IsInBounds(USceneComponent* Target_Comp, FVector In_Origin, FVector In_Extent);
+
 };
