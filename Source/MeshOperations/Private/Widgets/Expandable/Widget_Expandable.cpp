@@ -147,9 +147,17 @@ void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::
 						
 						if (!Temp_Found.IsEmpty())
 						{
+							// Expand all items to ensure the found item is visible.
+							for (FExpandableItemStruct& Each_Widget : this->Hierarchy_Items)
+							{
+								Each_Widget.Widget->Main_Expandable->SetIsExpanded(true);
+							}
+
 							this->Max_Index = Temp_Found.Num() - 1;
 							
 							UWidget_Expandable_Item* First_Item = Temp_Found[0];
+							
+							// Expanded sub-assemblies can't be scroll into view, so we need to collapse them.
 							First_Item->Main_Expandable->SetIsExpanded(false);
 							First_Item->Metadata_Expandable->SetIsExpanded(true);
 							
@@ -198,11 +206,18 @@ void UWidget_Expandable::On_Search_Next()
 
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
 	this->Index_Text->SetText(FText::FromString(Index_String));
+
+	// Expand all items to ensure the found item is visible.
+	for (FExpandableItemStruct& Each_Widget : this->Hierarchy_Items)
+	{
+		Each_Widget.Widget->Main_Expandable->SetIsExpanded(true);
+	}
 	
 	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 
 	if (IsValid(Current_Item))
 	{
+		// Expanded sub-assemblies can't be scroll into view, so we need to collapse them.
 		Current_Item->Main_Expandable->SetIsExpanded(false);
 		Current_Item->Metadata_Expandable->SetIsExpanded(true);
 		this->Toggle_Frame(Current_Item->Header_Canvas, false);
@@ -231,8 +246,15 @@ void UWidget_Expandable::On_Search_Previous()
 	this->Index_Text->SetText(FText::FromString(Index_String));
 	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 	
+	// Expand all items to ensure the found item is visible.
+	for (FExpandableItemStruct& Each_Widget : this->Hierarchy_Items)
+	{
+		Each_Widget.Widget->Main_Expandable->SetIsExpanded(true);
+	}
+
 	if (IsValid(Current_Item))
 	{
+		// Expanded sub-assemblies can't be scroll into view, so we need to collapse them.
 		Current_Item->Main_Expandable->SetIsExpanded(false);
 		Current_Item->Metadata_Expandable->SetIsExpanded(true);
 		this->Toggle_Frame(Current_Item->Header_Canvas, false);
