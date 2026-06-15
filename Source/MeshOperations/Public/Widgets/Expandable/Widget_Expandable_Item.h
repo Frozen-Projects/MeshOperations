@@ -1,28 +1,15 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "HAL/PlatformApplicationMisc.h"
-#include "Kismet/GameplayStatics.h"
+#include "Widgets/Expandable/Widget_Expandable_Metadata.h"
 
-#include "Components/Button.h"
-#include "Components/SizeBox.h"
-#include "Components/TextBlock.h"
-#include "Components/VerticalBox.h"
-#include "Components/RetainerBox.h"
-#include "Components/ExpandableArea.h"
-
-#include "MeshOperationsBPLibrary.h"
-#include "Widgets/Widget_Hierarchy_Metadata.h"
-
-#include "Widget_Hierarchy_Item.generated.h"
+#include "Widget_Expandable_Item.generated.h"
 
 // Forward Declarations.
-class UWidget_Hierarchy;
+class UWidget_Expandable;
 
 /*
 * Widget Order
@@ -31,7 +18,7 @@ class UWidget_Hierarchy;
 	Body > Size_Box > Retainer_Box > Children
 */
 UCLASS()
-class MESHOPERATIONS_API UWidget_Hierarchy_Item : public UUserWidget
+class MESHOPERATIONS_API UWidget_Expandable_Item : public UUserWidget
 {
 	GENERATED_BODY()
 	
@@ -88,15 +75,15 @@ public:
 	USceneComponent* Target = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
-	UWidget_Hierarchy* Main_Parent = nullptr;
+	UWidget_Expandable* Main_Parent = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
-	TSubclassOf<UWidget_Hierarchy_Metadata> Hierarchy_Metadata_Class;
+	TSubclassOf<UWidget_Expandable_Metadata> Hierarchy_Metadata_Class;
 
 };
 
 USTRUCT(BlueprintType)
-struct FHierarchy_Item_Struct
+struct FExpandableItemStruct
 {
 	GENERATED_BODY()
 
@@ -112,6 +99,6 @@ public:
 	FString Instance_Name;
 
 	UPROPERTY(BlueprintReadWrite)
-	UWidget_Hierarchy_Item* Widget = nullptr;
+	UWidget_Expandable_Item* Widget = nullptr;
 
 };

@@ -1,31 +1,22 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "Components/Border.h"
-#include "Components/ScrollBox.h"
-#include "Components/HorizontalBox.h"
-#include "Components/EditableTextBox.h"
-#include "Components/CanvasPanelSlot.h"
-#include "Components/ComboBoxString.h"
+#include "Widgets/Expandable/Widget_Expandable_Item.h"
 
-#include "Widgets/Widget_Hierarchy_Item.h"
-
-#include "Widget_Hierarchy.generated.h"
+#include "Widget_Expandable.generated.h"
 
 UCLASS()
-class MESHOPERATIONS_API UWidget_Hierarchy : public UUserWidget
+class MESHOPERATIONS_API UWidget_Expandable : public UUserWidget
 {
 	GENERATED_BODY()
 	
 private:
 
 	UPROPERTY()
-	TArray<UWidget_Hierarchy_Item*> Found_Widgets;
+	TArray<UWidget_Expandable_Item*> Found_Widgets;
 
 	UPROPERTY()
 	int32 Current_Index = 0;
@@ -37,10 +28,10 @@ private:
 	virtual bool Hierarchy_Generator();
 	
 	UFUNCTION()
-	virtual const FString Get_Search_Type(FHierarchy_Item_Struct In_Item) const;
+	virtual const FString Get_Search_Type(FExpandableItemStruct In_Item) const;
 
 	UFUNCTION()
-	virtual TArray<UWidget_Hierarchy_Item*> Find_Widgets(const FString& In_Name);
+	virtual TArray<UWidget_Expandable_Item*> Find_Widgets(const FString& In_Name);
 
 	UFUNCTION()
 	void On_Search_Committed(const FText& In_Text, ETextCommit::Type In_Commit_Type);
@@ -90,18 +81,18 @@ public:
 	UBorder* Item_Frame = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	UWidget_Hierarchy_Item* Root_Item_Widget = nullptr;
+	UWidget_Expandable_Item* Root_Item_Widget = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FHierarchy_Item_Struct> Hierarchy_Items;
+	TArray<FExpandableItemStruct> Hierarchy_Items;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Root = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
-	TSubclassOf<UWidget_Hierarchy_Item> Hierarchy_Item_Class;
+	TSubclassOf<UWidget_Expandable_Item> Hierarchy_Item_Class;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hierarchy", meta = (ExposeOnSpawn = true))
-	TSubclassOf<UWidget_Hierarchy_Metadata> Hierarchy_Metadata_Class;
+	TSubclassOf<UWidget_Expandable_Metadata> Hierarchy_Metadata_Class;
 
 };

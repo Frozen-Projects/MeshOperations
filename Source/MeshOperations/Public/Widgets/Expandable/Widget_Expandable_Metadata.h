@@ -4,13 +4,12 @@
 #include "Blueprint/UserWidget.h"
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "Components/Button.h"
-#include "Components/TextBlock.h"
+#include "Widgets/Expandable/Widget_Expandable_Includes.h"
 
-#include "Widget_Hierarchy_Metadata.generated.h"
+#include "Widget_Expandable_Metadata.generated.h"
 
 UCLASS()
-class MESHOPERATIONS_API UWidget_Hierarchy_Metadata : public UUserWidget
+class MESHOPERATIONS_API UWidget_Expandable_Metadata : public UUserWidget
 {
 	GENERATED_BODY()
 

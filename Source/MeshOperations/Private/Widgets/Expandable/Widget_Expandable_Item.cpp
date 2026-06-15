@@ -1,18 +1,19 @@
-#include "Widgets/Widget_Hierarchy_Item.h"
-#include "Widgets/Widget_Hierarchy.h"
+#include "Widgets/Expandable/Widget_Expandable_Item.h"
+#include "Widgets/Expandable/Widget_Expandable.h"
+#include "MeshOperationsBPLibrary.h"
 
-void UWidget_Hierarchy_Item::NativePreConstruct()
+void UWidget_Expandable_Item::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 }
 
-void UWidget_Hierarchy_Item::NativeConstruct()
+void UWidget_Expandable_Item::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
 	if (this->Hierarchy_Generator())
 	{
-		this->Button_Comp->OnClicked.AddDynamic(this, &UWidget_Hierarchy_Item::On_Select);
+		this->Button_Comp->OnClicked.AddDynamic(this, &UWidget_Expandable_Item::On_Select);
 	}
 
 	else
@@ -21,22 +22,22 @@ void UWidget_Hierarchy_Item::NativeConstruct()
 	}
 }
 
-void UWidget_Hierarchy_Item::NativeDestruct()
+void UWidget_Expandable_Item::NativeDestruct()
 {
 	Super::NativeDestruct();
 }
 
-void UWidget_Hierarchy_Item::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UWidget_Expandable_Item::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 }
 
-TSharedRef<SWidget> UWidget_Hierarchy_Item::RebuildWidget()
+TSharedRef<SWidget> UWidget_Expandable_Item::RebuildWidget()
 {
 	return Super::RebuildWidget();
 }
 
-bool UWidget_Hierarchy_Item::Hierarchy_Generator()
+bool UWidget_Expandable_Item::Hierarchy_Generator()
 {
 	if (!IsValid(this->Target))
 	{
@@ -55,21 +56,21 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 	{
 		for (const FName Each_Metadata : this->Target->ComponentTags)
 		{
-			UWidget_Hierarchy_Metadata* Each_Meta_Widget = CreateWidget<UWidget_Hierarchy_Metadata>(this, this->Hierarchy_Metadata_Class);
+			UWidget_Expandable_Metadata* Each_Meta_Widget = CreateWidget<UWidget_Expandable_Metadata>(this, this->Hierarchy_Metadata_Class);
 
 			if (IsValid(Each_Meta_Widget))
 			{
 				const FString Metadata_String = Each_Metadata.ToString();
 				Each_Meta_Widget->Title_Metadata->SetText(FText::FromString(Metadata_String));
 				this->Metadata_List->AddChild(Each_Meta_Widget);
-				Each_Meta_Widget->SetPadding(FMargin(75.f, 5.f, 5.f, 5.f));
+				Each_Meta_Widget->SetPadding(FMargin(50.f, 5.f, 5.f, 5.f));
 			}
 		}
 	}
 	
 	if (IsValid(this->Main_Parent))
 	{
-		FHierarchy_Item_Struct Hierarchy_Item_Struct;
+		FExpandableItemStruct Hierarchy_Item_Struct;
 		Hierarchy_Item_Struct.Object_Name = ObjectName;
 		Hierarchy_Item_Struct.Product_Name = this->Target->ComponentTags.Num() > 0 ? this->Target->ComponentTags[0].ToString() : TEXT("Unnamed_Product");
 		Hierarchy_Item_Struct.Instance_Name = this->Target->ComponentTags.Num() > 1 ? this->Target->ComponentTags[1].ToString() : TEXT("Unnamed_Instance");
@@ -82,7 +83,7 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 	
 	for (USceneComponent* Child_Comp : Children_Components)
 	{
-		UWidget_Hierarchy_Item* Child_Widget = CreateWidget<UWidget_Hierarchy_Item>(this, this->GetClass());
+		UWidget_Expandable_Item* Child_Widget = CreateWidget<UWidget_Expandable_Item>(this, this->GetClass());
 
 		if (IsValid(Child_Widget))
 		{
@@ -90,14 +91,14 @@ bool UWidget_Hierarchy_Item::Hierarchy_Generator()
 			Child_Widget->Main_Parent = this->Main_Parent;
 			Child_Widget->Hierarchy_Metadata_Class = this->Hierarchy_Metadata_Class;
 			this->Children->AddChild(Child_Widget);
-			Child_Widget->SetPadding(FMargin(5.f));
+			Child_Widget->SetPadding(FMargin(50.f, 5.f, 5.f, 5.f));
 		}
 	}
 
 	return true;
 }
 
-void UWidget_Hierarchy_Item::On_Select()
+void UWidget_Expandable_Item::On_Select()
 {
 	if (!IsValid(this->Target))
 	{

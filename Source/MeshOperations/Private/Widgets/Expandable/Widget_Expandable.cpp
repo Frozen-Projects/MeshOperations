@@ -1,6 +1,6 @@
-#include "Widgets/Widget_Hierarchy.h"
+#include "Widgets/Expandable/Widget_Expandable.h"
 
-void UWidget_Hierarchy::NativePreConstruct()
+void UWidget_Expandable::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
@@ -10,7 +10,7 @@ void UWidget_Hierarchy::NativePreConstruct()
 	this->Search_Type->SetSelectedOption(TEXT("Product"));
 }
 
-void UWidget_Hierarchy::NativeConstruct()
+void UWidget_Expandable::NativeConstruct()
 {
 	Super::NativeConstruct();
 
@@ -19,34 +19,34 @@ void UWidget_Hierarchy::NativeConstruct()
 		UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
 	}
 
-	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Hierarchy::On_Search_Committed);
-	this->Search_Next->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Next);
-	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Hierarchy::On_Search_Previous);
+	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Expandable::On_Search_Committed);
+	this->Search_Next->OnClicked.AddDynamic(this, &UWidget_Expandable::On_Search_Next);
+	this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_Expandable::On_Search_Previous);
 }
 
-void UWidget_Hierarchy::NativeDestruct()
+void UWidget_Expandable::NativeDestruct()
 {
 	Super::NativeDestruct();
 }
 
-void UWidget_Hierarchy::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UWidget_Expandable::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 }
 
-TSharedRef<SWidget> UWidget_Hierarchy::RebuildWidget()
+TSharedRef<SWidget> UWidget_Expandable::RebuildWidget()
 {
 	return Super::RebuildWidget();
 }
 
-bool UWidget_Hierarchy::Hierarchy_Generator()
+bool UWidget_Expandable::Hierarchy_Generator()
 {
 	if (!IsValid(this->Root))
 	{
 		return false;
 	}
 
-	this->Root_Item_Widget = CreateWidget<UWidget_Hierarchy_Item>(this, this->Hierarchy_Item_Class);
+	this->Root_Item_Widget = CreateWidget<UWidget_Expandable_Item>(this, this->Hierarchy_Item_Class);
 	this->Root_Item_Widget->Hierarchy_Metadata_Class = this->Hierarchy_Metadata_Class;
 	this->Root_Item_Widget->Main_Parent = this;
 	this->Root_Item_Widget->Target = this->Root;
@@ -56,7 +56,7 @@ bool UWidget_Hierarchy::Hierarchy_Generator()
 	return true;
 }
 
-const FString UWidget_Hierarchy::Get_Search_Type(FHierarchy_Item_Struct In_Item) const
+const FString UWidget_Expandable::Get_Search_Type(FExpandableItemStruct In_Item) const
 {
 	if (this->Search_Type->GetSelectedOption() == TEXT("Product"))
 	{
@@ -78,23 +78,23 @@ const FString UWidget_Hierarchy::Get_Search_Type(FHierarchy_Item_Struct In_Item)
 	return FString();
 }
 
-TArray<UWidget_Hierarchy_Item*> UWidget_Hierarchy::Find_Widgets(const FString& In_Name)
+TArray<UWidget_Expandable_Item*> UWidget_Expandable::Find_Widgets(const FString& In_Name)
 {
 	if (In_Name.IsEmpty())
 	{
-		return TArray<UWidget_Hierarchy_Item*>();
+		return TArray<UWidget_Expandable_Item*>();
 	}
 	
 	if (this->Hierarchy_Items.IsEmpty())
 	{
-		return TArray<UWidget_Hierarchy_Item*>();
+		return TArray<UWidget_Expandable_Item*>();
 	}
 
 	const FString Name_Lower = In_Name.ToLower();
 
-	TArray<UWidget_Hierarchy_Item*> Result;
+	TArray<UWidget_Expandable_Item*> Result;
 	
-	for (const FHierarchy_Item_Struct& Each_Item : this->Hierarchy_Items)
+	for (const FExpandableItemStruct& Each_Item : this->Hierarchy_Items)
 	{
 		const FString SearchTarget = this->Get_Search_Type(Each_Item).ToLower();
 		
@@ -112,7 +112,7 @@ TArray<UWidget_Hierarchy_Item*> UWidget_Hierarchy::Find_Widgets(const FString& I
 	return Result;
 }
 
-void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::Type In_Commit_Type)
+void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::Type In_Commit_Type)
 {
 	TArray<UWidget*> Children = this->Hierarchy->GetAllChildren();
 
@@ -139,7 +139,7 @@ void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::T
 	{
 		AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, In_Text]()
 			{
-				TArray<UWidget_Hierarchy_Item*> Temp_Found = this->Find_Widgets(In_Text.ToString());
+				TArray<UWidget_Expandable_Item*> Temp_Found = this->Find_Widgets(In_Text.ToString());
 
 				AsyncTask(ENamedThreads::GameThread, [this, Temp_Found]() mutable
 					{
@@ -149,7 +149,7 @@ void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::T
 						{
 							this->Max_Index = Temp_Found.Num() - 1;
 							
-							UWidget_Hierarchy_Item* First_Item = Temp_Found[0];
+							UWidget_Expandable_Item* First_Item = Temp_Found[0];
 							First_Item->Main_Expandable->SetIsExpanded(false);
 							First_Item->Metadata_Expandable->SetIsExpanded(true);
 							
@@ -179,7 +179,7 @@ void UWidget_Hierarchy::On_Search_Committed(const FText& In_Text, ETextCommit::T
 	}
 }
 
-void UWidget_Hierarchy::On_Search_Next()
+void UWidget_Expandable::On_Search_Next()
 {
 	if (this->Found_Widgets.IsEmpty())
 	{
@@ -199,7 +199,7 @@ void UWidget_Hierarchy::On_Search_Next()
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
 	this->Index_Text->SetText(FText::FromString(Index_String));
 	
-	UWidget_Hierarchy_Item* Current_Item = this->Found_Widgets[this->Current_Index];
+	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 
 	if (IsValid(Current_Item))
 	{
@@ -210,7 +210,7 @@ void UWidget_Hierarchy::On_Search_Next()
 	}
 }
 
-void UWidget_Hierarchy::On_Search_Previous()
+void UWidget_Expandable::On_Search_Previous()
 {
 	if (this->Found_Widgets.IsEmpty())
 	{
@@ -229,7 +229,7 @@ void UWidget_Hierarchy::On_Search_Previous()
 
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
 	this->Index_Text->SetText(FText::FromString(Index_String));
-	UWidget_Hierarchy_Item* Current_Item = this->Found_Widgets[this->Current_Index];
+	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
 	
 	if (IsValid(Current_Item))
 	{
@@ -240,7 +240,7 @@ void UWidget_Hierarchy::On_Search_Previous()
 	}
 }
 
-bool UWidget_Hierarchy::Toggle_Frame(UCanvasPanel* In_Canvas, bool bDisable)
+bool UWidget_Expandable::Toggle_Frame(UCanvasPanel* In_Canvas, bool bDisable)
 {
 	if (!IsValid(In_Canvas))
 	{
