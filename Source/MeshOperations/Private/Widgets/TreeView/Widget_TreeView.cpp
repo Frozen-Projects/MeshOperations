@@ -45,6 +45,7 @@ UTreeView_Data* UWidget_TreeView::GetOrCreateData(USceneComponent* InComponent, 
 
 	if (UTreeView_Data** FoundData = DataCache.Find(InComponent))
 	{
+		(*FoundData)->Padding_Depth = InDepth;
 		return *FoundData;
 	}
 
@@ -137,6 +138,13 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 		{
 			TArray<USceneComponent*> Temp_Parents;
 			Component->GetParentComponents(Temp_Parents);
+
+			const int32 RootIdx = Temp_Parents.IndexOfByKey(this->Root);
+			if (RootIdx != INDEX_NONE)
+			{
+				Temp_Parents.SetNum(RootIdx + 1);
+			}
+
 			this->MatchingComponents.Add(Component, Temp_Parents);
 		}
 	}
@@ -149,10 +157,8 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 
 		for (int32 Parent_Index = 0; Parent_Index < Pair.Value.Num(); Parent_Index++)
 		{
-			// +1 Because of root.
-			UTreeView_Data* Parent_Data = this->GetOrCreateData(Pair.Value[Parent_Index], Parent_Index + 1);
-			Parent_Data->bIsExpanded = true;
-			this->Hierarchy->SetItemExpansion(Parent_Data, Parent_Data->bIsExpanded);
+			UTreeView_Data* Parent_Data = this->GetOrCreateData(Pair.Value[Parent_Index], Parent_Index);
+			this->Hierarchy->SetItemExpansion(Parent_Data, true);
 		}
 
 		UTreeView_Data* Each_Matched = this->GetOrCreateData(Pair.Key, Pair.Value.Num());

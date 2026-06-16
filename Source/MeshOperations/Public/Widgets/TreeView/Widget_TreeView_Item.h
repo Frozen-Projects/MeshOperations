@@ -27,9 +27,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsHighlighted = false;
 
-	UPROPERTY()
-	bool bIsExpanded = false;
-
 };
 
 UCLASS()
@@ -43,7 +40,13 @@ private:
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 	UFUNCTION()
+	virtual void NativeOnItemExpansionChanged(bool bIsExpanded) override;
+
+	UFUNCTION()
 	virtual void On_Expand_Children();
+
+	UFUNCTION()
+	virtual void UpdateExpansionVisuals(bool bIsExpanded);
 
 public:
 
@@ -74,4 +77,12 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	FSlateColor DefaultColor = FSlateColor(FLinearColor::Black);
 
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	UMaterialInterface* ExpandedMaterial = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	UMaterialInterface* CollapsedMaterial = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
+	FSlateColor HoverColor = FSlateColor(FLinearColor::Green);
 };

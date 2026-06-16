@@ -55,39 +55,55 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 		NewPadding.Left = TreeView_Data->Padding_Depth * this->IndentationPerLevel;
 		ButtonSlot->SetPadding(NewPadding);
 	}
+
+	this->UpdateExpansionVisuals(IsListItemExpanded());
+}
+
+void UWidget_TreeView_Item::NativeOnItemExpansionChanged(bool bIsExpanded)
+{
+	IUserObjectListEntry::NativeOnItemExpansionChanged(bIsExpanded);
+	this->UpdateExpansionVisuals(bIsExpanded);
 }
 
 void UWidget_TreeView_Item::On_Expand_Children()
 {
-	UObject* ListItem = this->GetListItem();
-	
-	if (!IsValid(ListItem))
-	{
-		return;
-	}
-
-
-	UListViewBase* OwningListView = GetOwningListView();
-	
-	if (!IsValid(OwningListView))
-	{
-		return;
-	}
-
-	UTreeView* OwningTreeView = Cast<UTreeView>(OwningListView);
+	UTreeView* OwningTreeView = Cast<UTreeView>(GetOwningListView());
 
 	if (!IsValid(OwningTreeView))
 	{
 		return;
 	}
 
-	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(ListItem);
+	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(this->GetListItem());
 
 	if (!IsValid(TreeView_Data))
 	{
 		return;
 	}
 
-	TreeView_Data->bIsExpanded = !TreeView_Data->bIsExpanded;
-	OwningTreeView->SetItemExpansion(TreeView_Data, TreeView_Data->bIsExpanded);
+	OwningTreeView->SetItemExpansion(TreeView_Data, !IsListItemExpanded());
+}
+
+void UWidget_TreeView_Item::UpdateExpansionVisuals(bool bIsExpanded)
+{
+	if (!IsValid(this->Button_Expand))
+	{
+		return;
+	}
+
+	FButtonStyle ButtonStyle = Button_Expand->GetStyle();
+
+	if (IsValid(this->ExpandedMaterial) && IsValid(this->CollapsedMaterial))
+	{
+		UMaterialInterface* NormalImg = bIsExpanded ? this->ExpandedMaterial : this->CollapsedMaterial;
+		UMaterialInterface* PressedImg = bIsExpanded ? this->CollapsedMaterial : this->ExpandedMaterial;
+
+		ButtonStyle.Normal.SetResourceObject(NormalImg);
+		ButtonStyle.Hovered.SetResourceObject(NormalImg);
+		ButtonStyle.Pressed.SetResourceObject(PressedImg);
+	}
+
+	ButtonStyle.Hovered.TintColor = HoverColor;
+
+	Button_Expand->SetStyle(ButtonStyle);
 }
