@@ -57,6 +57,12 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 	}
 
 	this->UpdateExpansionVisuals(IsListItemExpanded());
+
+	// We hide expand button after padding else, padding won't work. Also, we need to hide it instead collapse because we need its layout.
+
+	const bool bHasChildren = TreeView_Data->Target_Component->GetNumChildrenComponents() > 0;
+	const ESlateVisibility NewVisibility = bHasChildren ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
+	this->Button_Expand->SetVisibility(NewVisibility);
 }
 
 void UWidget_TreeView_Item::NativeOnItemExpansionChanged(bool bIsExpanded)
