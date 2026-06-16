@@ -112,11 +112,10 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 		return;
 	}
 
-	this->ResetHighlights();
-
 	if (SearchText.IsEmpty() || !IsValid(this->Root))
 	{
 		this->MatchingComponents.Empty();
+		this->ResetHighlights();
 		return;
 	}
 
@@ -126,9 +125,12 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	if (AllComponents.IsEmpty())
 	{
 		this->MatchingComponents.Empty();
+		this->ResetHighlights();
 		return;
 	}
 	
+	this->ResetHighlights();
+
 	for (USceneComponent* Component : AllComponents)
 	{
 		if (Component->ComponentTags.Num() > 0 && Component->ComponentTags[0].ToString().Contains(SearchText.ToString()))
@@ -140,16 +142,9 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	}
 
 	bool bIsFirstReceived = false;
-	TPair<USceneComponent*, TArray<USceneComponent*>> First_Pair;
 
 	for (TPair<USceneComponent*, TArray<USceneComponent*>> Pair : this->MatchingComponents)
 	{
-		if (!bIsFirstReceived)
-		{
-			First_Pair = Pair;
-			bIsFirstReceived = true;
-		}
-
 		Algo::Reverse(Pair.Value);
 
 		for (int32 Parent_Index = 0; Parent_Index < Pair.Value.Num(); Parent_Index++)
@@ -162,10 +157,13 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 
 		UTreeView_Data* Each_Matched = this->GetOrCreateData(Pair.Key, Pair.Value.Num());
 		Each_Matched->bIsHighlighted = true;
+
+		if (!bIsFirstReceived)
+		{
+			this->Hierarchy->RequestScrollItemIntoView(Each_Matched);
+			bIsFirstReceived = true;
+		}
 	}
 
-	this->Hierarchy->RequestRefresh();
-
-	UTreeView_Data* First_Found = this->GetOrCreateData(First_Pair.Key, First_Pair.Value.Num());
-	this->Hierarchy->RequestScrollItemIntoView(First_Found);
+	this->Hierarchy->RequestRefresh();	
 }
