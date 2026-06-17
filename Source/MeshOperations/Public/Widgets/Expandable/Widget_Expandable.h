@@ -16,7 +16,7 @@ class MESHOPERATIONS_API UWidget_Expandable : public UUserWidget
 private:
 
 	UPROPERTY()
-	TArray<UWidget_Expandable_Item*> Found_Widgets;
+	TArray<UWidget_Expandable_Item*> MatchingComponents;
 
 	UPROPERTY()
 	int32 Current_Index = 0;
@@ -69,7 +69,7 @@ public:
 	UEditableTextBox* Search_Box = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTextBlock* Index_Text = nullptr;
+	UTextBlock* Title_Index = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Search_Next = nullptr;

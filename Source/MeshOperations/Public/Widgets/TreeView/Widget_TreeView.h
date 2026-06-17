@@ -20,6 +20,12 @@ private:
 	UPROPERTY()
 	TMap<USceneComponent*, UTreeView_Data*> DataCache;
 
+	UPROPERTY()
+	int32 Current_Index = 0;
+
+	UPROPERTY()
+	int32 Max_Index = 0;
+
 	UFUNCTION()
 	UTreeView_Data* GetOrCreateData(USceneComponent* InComponent, int32 InDepth);
 
@@ -34,6 +40,12 @@ private:
 
 	UFUNCTION()
 	virtual void On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod);
+
+	UFUNCTION()
+	virtual void On_Search_Next();
+
+	UFUNCTION()
+	void On_Search_Previous();
 
 public:
 
@@ -51,6 +63,15 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTreeView* Hierarchy = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* Title_Index = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UButton* Search_Next = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UButton* Search_Previous = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Root = nullptr;

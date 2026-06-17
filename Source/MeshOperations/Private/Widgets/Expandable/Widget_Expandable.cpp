@@ -17,6 +17,7 @@ void UWidget_Expandable::NativeConstruct()
 	if (!this->Hierarchy_Generator())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
+		return;
 	}
 
 	this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_Expandable::On_Search_Committed);
@@ -125,10 +126,10 @@ void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::
 	{
 		this->Current_Index = 0;
 		this->Max_Index = 0;
-		this->Found_Widgets.Empty();
+		this->MatchingComponents.Empty();
 		
 		const FString Index_String = FString::Printf(TEXT("%d of %d"), 0, 0);
-		this->Index_Text->SetText(FText::FromString(Index_String));
+		this->Title_Index->SetText(FText::FromString(Index_String));
 
 		this->Toggle_Frame(this->Canvas_Panel, true);
 
@@ -162,10 +163,10 @@ void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::
 							First_Item->Metadata_Expandable->SetIsExpanded(true);
 							
 							this->Hierarchy->ScrollWidgetIntoView(First_Item);
-							this->Found_Widgets = MoveTemp(Temp_Found);
+							this->MatchingComponents = MoveTemp(Temp_Found);
 
 							const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
-							this->Index_Text->SetText(FText::FromString(Index_String));
+							this->Title_Index->SetText(FText::FromString(Index_String));
 
 							this->Toggle_Frame(First_Item->Header_Canvas, false);
 						}
@@ -173,10 +174,10 @@ void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::
 						else
 						{
 							this->Max_Index = 0;
-							this->Found_Widgets.Empty();
+							this->MatchingComponents.Empty();
 	
 							const FString Index_String = FString::Printf(TEXT("%d of %d"), 0, 0);
-							this->Index_Text->SetText(FText::FromString(Index_String));
+							this->Title_Index->SetText(FText::FromString(Index_String));
 
 							this->Toggle_Frame(this->Canvas_Panel, true);
 						}
@@ -189,7 +190,7 @@ void UWidget_Expandable::On_Search_Committed(const FText& In_Text, ETextCommit::
 
 void UWidget_Expandable::On_Search_Next()
 {
-	if (this->Found_Widgets.IsEmpty())
+	if (this->MatchingComponents.IsEmpty())
 	{
 		return;
 	}
@@ -205,7 +206,7 @@ void UWidget_Expandable::On_Search_Next()
 	}
 
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
-	this->Index_Text->SetText(FText::FromString(Index_String));
+	this->Title_Index->SetText(FText::FromString(Index_String));
 
 	// Expand all items to ensure the found item is visible.
 	for (FExpandableItemStruct& Each_Widget : this->Hierarchy_Items)
@@ -213,7 +214,7 @@ void UWidget_Expandable::On_Search_Next()
 		Each_Widget.Widget->Main_Expandable->SetIsExpanded(true);
 	}
 	
-	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
+	UWidget_Expandable_Item* Current_Item = this->MatchingComponents[this->Current_Index];
 
 	if (IsValid(Current_Item))
 	{
@@ -227,7 +228,7 @@ void UWidget_Expandable::On_Search_Next()
 
 void UWidget_Expandable::On_Search_Previous()
 {
-	if (this->Found_Widgets.IsEmpty())
+	if (this->MatchingComponents.IsEmpty())
 	{
 		return;
 	}
@@ -243,8 +244,8 @@ void UWidget_Expandable::On_Search_Previous()
 	}
 
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
-	this->Index_Text->SetText(FText::FromString(Index_String));
-	UWidget_Expandable_Item* Current_Item = this->Found_Widgets[this->Current_Index];
+	this->Title_Index->SetText(FText::FromString(Index_String));
+	UWidget_Expandable_Item* Current_Item = this->MatchingComponents[this->Current_Index];
 	
 	// Expand all items to ensure the found item is visible.
 	for (FExpandableItemStruct& Each_Widget : this->Hierarchy_Items)

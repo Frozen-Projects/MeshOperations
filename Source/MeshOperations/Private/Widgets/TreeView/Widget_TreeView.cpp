@@ -15,9 +15,16 @@ void UWidget_TreeView::NativeConstruct()
 		this->MatchingComponents.Empty();
 
 		this->Hierarchy->SetOnGetItemChildren(this, &UWidget_TreeView::HandleGetChildren);
-		this->Hierarchy_Generator();
+		
+		if (!this->Hierarchy_Generator())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
+			return;
+		}
 
 		this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_TreeView::On_Search_Committed);
+		this->Search_Next->OnClicked.AddDynamic(this, &UWidget_TreeView::On_Search_Next);
+		this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_TreeView::On_Search_Previous);
 	}
 }
 
@@ -117,6 +124,9 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	{
 		this->MatchingComponents.Empty();
 		this->ResetHighlights();
+		this->Current_Index = 0;
+		this->Max_Index = 0;
+		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
 		return;
 	}
 
@@ -127,6 +137,9 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	{
 		this->MatchingComponents.Empty();
 		this->ResetHighlights();
+		this->Current_Index = 0;
+		this->Max_Index = 0;
+		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
 		return;
 	}
 	
@@ -171,5 +184,72 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 		}
 	}
 
-	this->Hierarchy->RequestRefresh();	
+	this->Hierarchy->RequestRefresh();
+	const int32 FoundNum = this->MatchingComponents.Num();
+	this->Max_Index = FoundNum - 1;
+	this->Title_Index->SetText(FText::FromString(FString::Printf(TEXT("%d of %d"), 1, FoundNum)));
+}
+
+void UWidget_TreeView::On_Search_Next()
+{
+	if (this->MatchingComponents.IsEmpty())
+	{
+		return;
+	}
+
+	if (this->Current_Index < 0 || this->Current_Index >= this->Max_Index)
+	{
+		this->Current_Index = 0;
+	}
+
+	else
+	{
+		this->Current_Index++;
+	}
+
+	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
+	this->Title_Index->SetText(FText::FromString(Index_String));
+
+	TArray<USceneComponent*> Keys;
+	this->MatchingComponents.GenerateKeyArray(Keys);
+
+	USceneComponent* Current_Component = Keys[this->Current_Index];
+	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Component);
+
+	if (IsValid(Current_Data))
+	{
+		this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+	}
+}
+
+void UWidget_TreeView::On_Search_Previous()
+{
+	if (this->MatchingComponents.IsEmpty())
+	{
+		return;
+	}
+
+	if (this->Current_Index <= 0 || this->Current_Index > this->Max_Index)
+	{
+		this->Current_Index = this->Max_Index;
+	}
+
+	else
+	{
+		this->Current_Index--;
+	}
+
+	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
+	this->Title_Index->SetText(FText::FromString(Index_String));
+
+	TArray<USceneComponent*> Keys;
+	this->MatchingComponents.GenerateKeyArray(Keys);
+
+	USceneComponent* Current_Component = Keys[this->Current_Index];
+	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Component);
+
+	if (IsValid(Current_Data))
+	{
+		this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+	}
 }
