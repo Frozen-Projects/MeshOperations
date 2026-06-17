@@ -44,8 +44,8 @@ bool UWidget_Expandable_Item::Hierarchy_Generator()
 		return false;
 	}
 
-	FString ObjectName;
-	if (!UMeshOperationsBPLibrary::GetObjectNameForPackage(ObjectName, this->Target, false) || ObjectName.IsEmpty())
+	FString ObjectName = UMeshOperationsBPLibrary::GetObjectNameForPackage(this->Target, false);
+	if (ObjectName.IsEmpty())
 	{
 		ObjectName = TEXT("NULL");
 	}

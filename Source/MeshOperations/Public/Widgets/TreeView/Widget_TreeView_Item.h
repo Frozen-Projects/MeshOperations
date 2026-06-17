@@ -11,6 +11,15 @@
 // Forward Declarations.
 class UWidget_TreeView;
 
+UENUM(BlueprintType)
+enum class EHierarchyNames : uint8
+{
+	Name_Object = 0		UMETA(DisplayName = "Object Name"),
+	Name_Product = 1	UMETA(DisplayName = "Product Name"),
+	Name_Instance = 2	UMETA(DisplayName = "Instance Name"),
+};
+ENUM_CLASS_FLAGS(EHierarchyNames)
+
 UCLASS(BlueprintType)
 class MESHOPERATIONS_API UTreeView_Data : public UObject
 {
@@ -29,6 +38,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsCurrentHighlight = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	EHierarchyNames HierarchyName = EHierarchyNames::Name_Product;
 
 };
 

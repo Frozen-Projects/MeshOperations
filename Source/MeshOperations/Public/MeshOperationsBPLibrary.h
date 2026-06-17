@@ -21,7 +21,7 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     static MESHOPERATIONS_API FString GetClassName(const UObject* Object);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Object Name for Package", Keywords = "name,object,package"), Category = "Frozen Forest|Mesh Operations")
-    static MESHOPERATIONS_API bool GetObjectNameForPackage(FString& Out_Name, USceneComponent* Object, bool bUseReadableName = false);
+    static MESHOPERATIONS_API FString GetObjectNameForPackage(USceneComponent* Object, bool bUseReadableName = false);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Component By Name", Keywords = "get, component, by, name"), Category = "Frozen Forest|Mesh Operations")
     static MESHOPERATIONS_API bool GetComponentByName(FName InName, UObject* Owner, USceneComponent*& OutComponent);

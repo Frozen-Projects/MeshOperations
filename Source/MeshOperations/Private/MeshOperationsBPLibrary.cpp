@@ -14,19 +14,18 @@ FString UMeshOperationsBPLibrary::GetClassName(const UObject* Object)
     return Class->GetName();
 }
 
-bool UMeshOperationsBPLibrary::GetObjectNameForPackage(FString& Out_Name, USceneComponent* Object, bool bUseReadableName)
+FString UMeshOperationsBPLibrary::GetObjectNameForPackage(USceneComponent* Object, bool bUseReadableName)
 {
     if (!IsValid(Object))
     {
-        return false;
+        return FString();
     }
 
     const FString ObjectName = bUseReadableName ? Object->GetReadableName() : Object->GetName();
 
 #if WITH_EDITOR
    
-    Out_Name = ObjectName;
-    return true;
+    return ObjectName;
 
 #else
    
@@ -35,12 +34,10 @@ bool UMeshOperationsBPLibrary::GetObjectNameForPackage(FString& Out_Name, UScene
     // Packaged projects have "_SOMETHING" like suffixes on component names, so we need to remove those to get the original name of the component.
     if (ObjectName.FindLastChar(TEXT('_'), LastUnderscoreIndex))
     {
-        Out_Name = ObjectName.Left(LastUnderscoreIndex);
-        return !Out_Name.IsEmpty();
+        return ObjectName.Left(LastUnderscoreIndex);
     }
 
-    Out_Name = ObjectName;
-    return !Out_Name.IsEmpty();
+    return ObjectName;
 
 #endif
 }
@@ -1037,9 +1034,8 @@ bool UMeshOperationsBPLibrary::MovePivotsToCenter(USceneComponent* RootComponent
         {
             if (!UMeshOperationsBPLibrary::SetPivotLocation(Each_Mesh, Each_Mesh->Bounds.Origin, Each_Mesh))
             {
-                FString Errored_Mesh;
-                UMeshOperationsBPLibrary::GetObjectNameForPackage(Errored_Mesh, Each_Mesh);
-                ErroredMeshes.Add(Errored_Mesh);
+                const FString Error_Mesh = UMeshOperationsBPLibrary::GetObjectNameForPackage(Each_Mesh);
+                ErroredMeshes.Add(Error_Mesh);
             }
         }
     }

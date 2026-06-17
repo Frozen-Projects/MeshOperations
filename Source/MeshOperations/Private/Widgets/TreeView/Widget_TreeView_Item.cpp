@@ -59,7 +59,56 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 		return;
 	}
 
-	this->Title->SetText(TreeView_Data->Target_Component->ComponentTags.IsEmpty() ? FText::FromString("Unnamed Product") : FText::FromName(TreeView_Data->Target_Component->ComponentTags[0]));
+	switch (TreeView_Data->HierarchyName)
+	{
+		case EHierarchyNames::Name_Object:
+		{
+			const FString Object_Name = UMeshOperationsBPLibrary::GetObjectNameForPackage(TreeView_Data->Target_Component);
+			this->Title->SetText(FText::FromString(Object_Name));
+			break;
+		}
+
+		case EHierarchyNames::Name_Product:
+		{
+			if (TreeView_Data->Target_Component->ComponentTags.IsEmpty())
+			{
+				this->Title->SetText(FText::FromString(UNNAMED_PRODUCT));
+				break;
+			}
+
+			const FString FirstTag = TreeView_Data->Target_Component->ComponentTags[0].ToString();
+
+			if (!FirstTag.Contains(PRODUCT_NAME_TAG_PREFIX))
+			{
+				this->Title->SetText(FText::FromString(UNNAMED_PRODUCT));
+				break;
+			}
+
+			this->Title->SetText(FText::FromString(FirstTag));
+			break;
+		}
+
+		case EHierarchyNames::Name_Instance:
+		{
+			if (TreeView_Data->Target_Component->ComponentTags.Num() < 2)
+			{
+				this->Title->SetText(FText::FromString(UNNAMED_INSTANCE));
+				break;
+			}
+
+			const FString SecondTag = TreeView_Data->Target_Component->ComponentTags[0].ToString();
+
+			if (!SecondTag.Contains(INSTANCE_NAME_TAG_PREFIX))
+			{
+				this->Title->SetText(FText::FromString(UNNAMED_INSTANCE));
+				break;
+			}
+
+			this->Title->SetText(FText::FromString(SecondTag));
+			break;
+		}
+	}
+
 	this->ApplyHighlightColor_Internal(TreeView_Data);
 
 	if (!IsValid(this->Button_Expand))
