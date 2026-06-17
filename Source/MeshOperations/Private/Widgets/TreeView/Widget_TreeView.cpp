@@ -100,7 +100,7 @@ bool UWidget_TreeView::Hierarchy_Generator()
 	return true;
 }
 
-void UWidget_TreeView::ResetHighlights()
+void UWidget_TreeView::ClearHighlights()
 {
 	TArray<UTreeView_Data*> Data_Items;
 	this->DataCache.GenerateValueArray(Data_Items);
@@ -108,9 +108,26 @@ void UWidget_TreeView::ResetHighlights()
 	for (UTreeView_Data* Each_Data : Data_Items)
 	{
 		Each_Data->bIsHighlighted = false;
+		Each_Data->bIsCurrentHighlight = false;
 	}
 
 	this->Hierarchy->RequestRefresh();
+}
+
+void UWidget_TreeView::SwitchHiglights()
+{
+	if (!IsValid(this->Hierarchy))
+	{
+		return;
+	}
+
+	for (UUserWidget* EntryWidget : this->Hierarchy->GetDisplayedEntryWidgets())
+	{
+		if (UWidget_TreeView_Item* Item = Cast<UWidget_TreeView_Item>(EntryWidget))
+		{
+			Item->ApplyHighlightColor();
+		}
+	}
 }
 
 void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod)
@@ -123,7 +140,7 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	if (SearchText.IsEmpty() || !IsValid(this->Root))
 	{
 		this->MatchingComponents.Empty();
-		this->ResetHighlights();
+		this->ClearHighlights();
 		this->Current_Index = 0;
 		this->Max_Index = 0;
 		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
@@ -136,14 +153,14 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 	if (AllComponents.IsEmpty())
 	{
 		this->MatchingComponents.Empty();
-		this->ResetHighlights();
+		this->ClearHighlights();
 		this->Current_Index = 0;
 		this->Max_Index = 0;
 		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
 		return;
 	}
 	
-	this->ResetHighlights();
+	this->ClearHighlights();
 
 	for (USceneComponent* Component : AllComponents)
 	{
@@ -234,6 +251,7 @@ void UWidget_TreeView::On_Search_Next()
 	Current_Data->bIsCurrentHighlight = true;
 	this->Hierarchy->RequestScrollItemIntoView(Current_Data);
 	this->Hierarchy->RequestRefresh();
+	this->SwitchHiglights();
 }
 
 void UWidget_TreeView::On_Search_Previous()
@@ -279,4 +297,5 @@ void UWidget_TreeView::On_Search_Previous()
 	Current_Data->bIsCurrentHighlight = true;
 	this->Hierarchy->RequestScrollItemIntoView(Current_Data);
 	this->Hierarchy->RequestRefresh();
+	this->SwitchHiglights();
 }

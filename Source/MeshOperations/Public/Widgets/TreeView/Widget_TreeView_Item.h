@@ -40,6 +40,9 @@ class MESHOPERATIONS_API UWidget_TreeView_Item : public UUserWidget, public IUse
 private:
 
 	UFUNCTION()
+	virtual void ApplyHighlightColor_Internal(UTreeView_Data* TreeView_Data);
+
+	UFUNCTION()
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 	UFUNCTION()
@@ -58,6 +61,8 @@ public:
 	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual TSharedRef<SWidget> RebuildWidget() override;
+
+	virtual void ApplyHighlightColor();
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* Main_Canvas = nullptr;

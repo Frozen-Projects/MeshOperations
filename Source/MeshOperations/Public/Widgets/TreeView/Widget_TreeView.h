@@ -36,7 +36,10 @@ private:
 	virtual bool Hierarchy_Generator();
 	
 	UFUNCTION()
-	virtual void ResetHighlights();
+	virtual void ClearHighlights();
+
+	UFUNCTION()
+	virtual void SwitchHiglights();
 
 	UFUNCTION()
 	virtual void On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod);
