@@ -62,10 +62,13 @@ public:
 	UCanvasPanel* Canvas_Panel = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UEditableTextBox* Search_Box = nullptr;
+	UHorizontalBox* Search_Area = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTreeView* Hierarchy = nullptr;
+	UComboBoxString* Search_Type = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UEditableTextBox* Search_Box = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* Title_Index = nullptr;
@@ -75,6 +78,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UButton* Search_Previous = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTreeView* Hierarchy = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Root = nullptr;

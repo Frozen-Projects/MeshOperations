@@ -74,19 +74,22 @@ public:
 	UButton* Button_Expand = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTextBlock* TITLE_Product = nullptr;
+	UButton* Button_Select = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* Title = nullptr;
 
 	UPROPERTY(BlueprintReadWrite)
 	double IndentationPerLevel = 32.0;
 
 	UPROPERTY(BlueprintReadWrite)
-	FSlateColor Text_HighlightColor = FSlateColor(FLinearColor::Yellow);
+	FSlateColor Title_HighlightColor = FSlateColor(FLinearColor::Yellow);
 
 	UPROPERTY(BlueprintReadWrite)
-	FSlateColor Text_FirstHighlightColor = FSlateColor(FLinearColor::Blue);
+	FSlateColor Title_FirstHighlightColor = FSlateColor(FLinearColor::Blue);
 	
 	UPROPERTY(BlueprintReadWrite)
-	FSlateColor Text_DefaultColor = FSlateColor(FLinearColor::Black);
+	FSlateColor Title_DefaultColor = FSlateColor(FLinearColor::Black);
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	UMaterialInterface* Button_ExpandedMaterial = nullptr;

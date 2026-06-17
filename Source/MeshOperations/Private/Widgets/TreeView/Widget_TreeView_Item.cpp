@@ -31,16 +31,16 @@ TSharedRef<SWidget> UWidget_TreeView_Item::RebuildWidget()
 
 void UWidget_TreeView_Item::ApplyHighlightColor_Internal(UTreeView_Data* TreeView_Data)
 {
-	if (!IsValid(TreeView_Data) || !IsValid(this->TITLE_Product))
+	if (!IsValid(TreeView_Data) || !IsValid(this->Title))
 	{
 		return;
 	}
 
 	const FSlateColor NewColor = TreeView_Data->bIsHighlighted
-		? (TreeView_Data->bIsCurrentHighlight ? this->Text_FirstHighlightColor : this->Text_HighlightColor)
-		: this->Text_DefaultColor;
+		? (TreeView_Data->bIsCurrentHighlight ? this->Title_FirstHighlightColor : this->Title_HighlightColor)
+		: this->Title_DefaultColor;
 
-	this->TITLE_Product->SetColorAndOpacity(NewColor);
+	this->Title->SetColorAndOpacity(NewColor);
 }
 
 void UWidget_TreeView_Item::ApplyHighlightColor()
@@ -59,7 +59,7 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 		return;
 	}
 
-	this->TITLE_Product->SetText(TreeView_Data->Target_Component->ComponentTags.IsEmpty() ? FText::FromString("Unnamed Product") : FText::FromName(TreeView_Data->Target_Component->ComponentTags[0]));
+	this->Title->SetText(TreeView_Data->Target_Component->ComponentTags.IsEmpty() ? FText::FromString("Unnamed Product") : FText::FromName(TreeView_Data->Target_Component->ComponentTags[0]));
 	this->ApplyHighlightColor_Internal(TreeView_Data);
 
 	if (!IsValid(this->Button_Expand))

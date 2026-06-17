@@ -3,6 +3,11 @@
 void UWidget_TreeView::NativePreConstruct()
 {
 	Super::NativePreConstruct();
+
+	this->Search_Type->AddOption(TEXT("Product"));
+	this->Search_Type->AddOption(TEXT("Instance"));
+	this->Search_Type->AddOption(TEXT("Object"));
+	this->Search_Type->SetSelectedOption(TEXT("Product"));
 }
 
 void UWidget_TreeView::NativeConstruct()
