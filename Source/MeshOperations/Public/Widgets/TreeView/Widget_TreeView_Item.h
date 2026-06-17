@@ -14,9 +14,9 @@ class UWidget_TreeView;
 UENUM(BlueprintType)
 enum class EHierarchyNames : uint8
 {
-	Name_Object = 0		UMETA(DisplayName = "Object Name"),
-	Name_Product = 1	UMETA(DisplayName = "Product Name"),
-	Name_Instance = 2	UMETA(DisplayName = "Instance Name"),
+	Object = 0		UMETA(DisplayName = "Object"),
+	Product = 1		UMETA(DisplayName = "Product"),
+	Instance = 2	UMETA(DisplayName = "Instance"),
 };
 ENUM_CLASS_FLAGS(EHierarchyNames)
 
@@ -40,7 +40,7 @@ public:
 	bool bIsCurrentHighlight = false;
 
 	UPROPERTY(BlueprintReadWrite)
-	EHierarchyNames HierarchyName = EHierarchyNames::Name_Product;
+	EHierarchyNames HierarchyName = EHierarchyNames::Product;
 
 };
 

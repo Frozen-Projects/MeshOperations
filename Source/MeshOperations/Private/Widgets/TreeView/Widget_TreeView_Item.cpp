@@ -61,14 +61,14 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 	switch (TreeView_Data->HierarchyName)
 	{
-		case EHierarchyNames::Name_Object:
+		case EHierarchyNames::Object:
 		{
 			const FString Object_Name = UMeshOperationsBPLibrary::GetObjectNameForPackage(TreeView_Data->Target_Component);
 			this->Title->SetText(FText::FromString(Object_Name));
 			break;
 		}
 
-		case EHierarchyNames::Name_Product:
+		case EHierarchyNames::Product:
 		{
 			if (TreeView_Data->Target_Component->ComponentTags.IsEmpty())
 			{
@@ -88,7 +88,7 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 			break;
 		}
 
-		case EHierarchyNames::Name_Instance:
+		case EHierarchyNames::Instance:
 		{
 			if (TreeView_Data->Target_Component->ComponentTags.Num() < 2)
 			{
@@ -105,6 +105,13 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 			}
 
 			this->Title->SetText(FText::FromString(SecondTag));
+			break;
+		}
+
+		default:
+		{
+			const FString Object_Name = UMeshOperationsBPLibrary::GetObjectNameForPackage(TreeView_Data->Target_Component);
+			this->Title->SetText(FText::FromString(Object_Name));
 			break;
 		}
 	}

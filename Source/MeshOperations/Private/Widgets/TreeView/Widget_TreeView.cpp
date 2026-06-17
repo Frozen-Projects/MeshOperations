@@ -4,10 +4,13 @@ void UWidget_TreeView::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
-	this->Search_Type->AddOption(TEXT("Product"));
-	this->Search_Type->AddOption(TEXT("Instance"));
-	this->Search_Type->AddOption(TEXT("Object"));
-	this->Search_Type->SetSelectedOption(TEXT("Product"));
+	this->Search_Type->AddOption(UWidget_TreeView::GetEnumDisplayName(EHierarchyNames::Product));
+	this->Search_Type->AddOption(UWidget_TreeView::GetEnumDisplayName(EHierarchyNames::Instance));
+	this->Search_Type->AddOption(UWidget_TreeView::GetEnumDisplayName(EHierarchyNames::Object));
+	this->Search_Type->SetSelectedIndex(0);
+
+	const FString HintText = FString::Printf(TEXT("Search by %s Name..."), *this->Search_Type->GetSelectedOption());
+	this->Search_Box->SetHintText(FText::FromString(HintText));
 }
 
 void UWidget_TreeView::NativeConstruct()
@@ -30,6 +33,7 @@ void UWidget_TreeView::NativeConstruct()
 		this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_TreeView::On_Search_Committed);
 		this->Search_Next->OnClicked.AddDynamic(this, &UWidget_TreeView::On_Search_Next);
 		this->Search_Previous->OnClicked.AddDynamic(this, &UWidget_TreeView::On_Search_Previous);
+		this->Search_Type->OnSelectionChanged.AddDynamic(this, &UWidget_TreeView::On_Search_Type_Changed);
 	}
 }
 
@@ -46,6 +50,18 @@ void UWidget_TreeView::NativeTick(const FGeometry& MyGeometry, float InDeltaTime
 TSharedRef<SWidget> UWidget_TreeView::RebuildWidget()
 {
 	return Super::RebuildWidget();
+}
+
+FString UWidget_TreeView::GetEnumDisplayName(EHierarchyNames In_Enum)
+{
+	const UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
+
+	if (!EnumPtr)
+	{
+		return FString();
+	}
+
+	return EnumPtr->GetNameStringByValue((int64)In_Enum);
 }
 
 UTreeView_Data* UWidget_TreeView::GetOrCreateData(USceneComponent* InComponent, int32 InDepth)
@@ -303,4 +319,77 @@ void UWidget_TreeView::On_Search_Previous()
 	this->Hierarchy->RequestScrollItemIntoView(Current_Data);
 	this->Hierarchy->RequestRefresh();
 	this->SwitchHiglights();
+}
+
+void UWidget_TreeView::On_Search_Type_Changed(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	if (SelectionType != ESelectInfo::Direct && SelectionType != ESelectInfo::OnKeyPress && SelectionType != ESelectInfo::OnMouseClick)
+	{
+		this->Search_Box->bIsEnabled = false;
+		return;
+	}
+
+	UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
+
+	if (!EnumPtr)
+	{
+		this->Search_Box->bIsEnabled = false;
+		return;
+	}
+
+	const int64 EnumValue = EnumPtr->GetValueByName(FName(*SelectedItem));
+
+	if (EnumValue == INDEX_NONE)
+	{
+		this->Search_Box->bIsEnabled = false;
+		return;
+	}
+
+	const EHierarchyNames FoundState = static_cast<EHierarchyNames>(EnumValue);
+
+	switch (FoundState)
+	{
+		case EHierarchyNames::Object:
+		{
+			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Object Name...")));
+			break;
+		}
+
+		case EHierarchyNames::Product:
+		{
+			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Product Name...")));
+			break;
+		}
+
+		case EHierarchyNames::Instance:
+		{
+			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Instance Name...")));
+			break;
+		}
+
+		default:
+		{
+			this->Search_Box->bIsEnabled = false;
+			return;
+		}
+	}
+
+	TArray<UObject*> ListItems = this->Hierarchy->GetListItems();
+
+	for (UObject* Each_Item : ListItems)
+	{
+		UTreeView_Data* Each_Data = Cast<UTreeView_Data>(Each_Item);
+
+		if (!IsValid(Each_Data))
+		{
+			continue;
+		}
+
+		Each_Data->HierarchyName = FoundState;
+	}
+
+	this->Hierarchy->RequestRefresh();
 }

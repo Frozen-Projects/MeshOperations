@@ -27,6 +27,9 @@ private:
 	int32 Max_Index = 0;
 
 	UFUNCTION()
+	static FString GetEnumDisplayName(EHierarchyNames In_Enum);
+
+	UFUNCTION()
 	UTreeView_Data* GetOrCreateData(USceneComponent* InComponent, int32 InDepth);
 
 	UFUNCTION()
@@ -48,7 +51,10 @@ private:
 	virtual void On_Search_Next();
 
 	UFUNCTION()
-	void On_Search_Previous();
+	virtual void On_Search_Previous();
+
+	UFUNCTION()
+	virtual void On_Search_Type_Changed(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 public:
 
@@ -84,5 +90,5 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	USceneComponent* Root = nullptr;
-
+	
 };
