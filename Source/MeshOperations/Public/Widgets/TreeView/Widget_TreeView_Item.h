@@ -27,6 +27,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	bool bIsHighlighted = false;
 
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsCurrentHighlight = false;
+
 };
 
 UCLASS()
@@ -72,17 +75,20 @@ public:
 	double IndentationPerLevel = 32.0;
 
 	UPROPERTY(BlueprintReadWrite)
-	FSlateColor HighlightedColor = FSlateColor(FLinearColor::Yellow);
+	FSlateColor Text_HighlightColor = FSlateColor(FLinearColor::Yellow);
+
+	UPROPERTY(BlueprintReadWrite)
+	FSlateColor Text_FirstHighlightColor = FSlateColor(FLinearColor::Blue);
 	
 	UPROPERTY(BlueprintReadWrite)
-	FSlateColor DefaultColor = FSlateColor(FLinearColor::Black);
+	FSlateColor Text_DefaultColor = FSlateColor(FLinearColor::Black);
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	UMaterialInterface* ExpandedMaterial = nullptr;
+	UMaterialInterface* Button_ExpandedMaterial = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	UMaterialInterface* CollapsedMaterial = nullptr;
+	UMaterialInterface* Button_CollapsedMaterial = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	FSlateColor HoverColor = FSlateColor(FLinearColor::Green);
+	FSlateColor Button_HoverColor = FSlateColor(FLinearColor::Green);
 };

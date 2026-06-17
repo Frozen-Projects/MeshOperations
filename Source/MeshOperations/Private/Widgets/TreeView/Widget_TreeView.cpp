@@ -179,6 +179,7 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 
 		if (!bIsFirstReceived)
 		{
+			Each_Matched->bIsCurrentHighlight = true;
 			this->Hierarchy->RequestScrollItemIntoView(Each_Matched);
 			bIsFirstReceived = true;
 		}
@@ -210,16 +211,29 @@ void UWidget_TreeView::On_Search_Next()
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
 	this->Title_Index->SetText(FText::FromString(Index_String));
 
-	TArray<USceneComponent*> Keys;
-	this->MatchingComponents.GenerateKeyArray(Keys);
+	// Expand current items parents.
 
-	USceneComponent* Current_Component = Keys[this->Current_Index];
-	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Component);
+	TPair<USceneComponent*, TArray<USceneComponent*>> Current_Pair = this->MatchingComponents.Array()[this->Current_Index];
+	Algo::Reverse(Current_Pair.Value);
 
-	if (IsValid(Current_Data))
+	for (int32 Parent_Index = 0; Parent_Index < Current_Pair.Value.Num(); Parent_Index++)
 	{
-		this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+		UTreeView_Data* Parent_Data = this->GetOrCreateData(Current_Pair.Value[Parent_Index], Parent_Index);
+		this->Hierarchy->SetItemExpansion(Parent_Data, true);
 	}
+
+	for (TPair<USceneComponent*, TArray<USceneComponent*>> Each_Pair : this->MatchingComponents)
+	{
+		UTreeView_Data* Each_Data = this->DataCache.FindRef(Each_Pair.Key);
+		Each_Data->bIsCurrentHighlight = false;
+	}
+
+	// Scroll current item into view.
+
+	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Pair.Key);
+	Current_Data->bIsCurrentHighlight = true;
+	this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+	this->Hierarchy->RequestRefresh();
 }
 
 void UWidget_TreeView::On_Search_Previous()
@@ -242,14 +256,27 @@ void UWidget_TreeView::On_Search_Previous()
 	const FString Index_String = FString::Printf(TEXT("%d of %d"), this->Current_Index + 1, this->Max_Index + 1);
 	this->Title_Index->SetText(FText::FromString(Index_String));
 
-	TArray<USceneComponent*> Keys;
-	this->MatchingComponents.GenerateKeyArray(Keys);
+	// Expand current items parents.
 
-	USceneComponent* Current_Component = Keys[this->Current_Index];
-	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Component);
+	TPair<USceneComponent*, TArray<USceneComponent*>> Current_Pair = this->MatchingComponents.Array()[this->Current_Index];
+	Algo::Reverse(Current_Pair.Value);
 
-	if (IsValid(Current_Data))
+	for (int32 Parent_Index = 0; Parent_Index < Current_Pair.Value.Num(); Parent_Index++)
 	{
-		this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+		UTreeView_Data* Parent_Data = this->GetOrCreateData(Current_Pair.Value[Parent_Index], Parent_Index);
+		this->Hierarchy->SetItemExpansion(Parent_Data, true);
 	}
+
+	for (TPair<USceneComponent*, TArray<USceneComponent*>> Each_Pair : this->MatchingComponents)
+	{
+		UTreeView_Data* Each_Data = this->DataCache.FindRef(Each_Pair.Key);
+		Each_Data->bIsCurrentHighlight = false;
+	}
+
+	// Scroll current item into view.
+
+	UTreeView_Data* Current_Data = this->DataCache.FindRef(Current_Pair.Key);
+	Current_Data->bIsCurrentHighlight = true;
+	this->Hierarchy->RequestScrollItemIntoView(Current_Data);
+	this->Hierarchy->RequestRefresh();
 }

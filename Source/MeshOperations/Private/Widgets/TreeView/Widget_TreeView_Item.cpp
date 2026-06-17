@@ -41,7 +41,7 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 	}
 
 	this->TITLE_Product->SetText(TreeView_Data->Target_Component->ComponentTags.IsEmpty() ? FText::FromString("Unnamed Product") : FText::FromName(TreeView_Data->Target_Component->ComponentTags[0]));
-	this->TITLE_Product->SetColorAndOpacity(TreeView_Data->bIsHighlighted ? this->HighlightedColor : this->DefaultColor);
+	this->TITLE_Product->SetColorAndOpacity(TreeView_Data->bIsHighlighted ? (TreeView_Data->bIsCurrentHighlight ? this->Text_FirstHighlightColor : this->Text_HighlightColor) : this->Text_DefaultColor);
 
 	if (!IsValid(this->Button_Expand))
 	{
@@ -99,17 +99,17 @@ void UWidget_TreeView_Item::UpdateExpansionVisuals(bool bIsExpanded)
 
 	FButtonStyle ButtonStyle = Button_Expand->GetStyle();
 
-	if (IsValid(this->ExpandedMaterial) && IsValid(this->CollapsedMaterial))
+	if (IsValid(this->Button_ExpandedMaterial) && IsValid(this->Button_CollapsedMaterial))
 	{
-		UMaterialInterface* NormalImg = bIsExpanded ? this->ExpandedMaterial : this->CollapsedMaterial;
-		UMaterialInterface* PressedImg = bIsExpanded ? this->CollapsedMaterial : this->ExpandedMaterial;
+		UMaterialInterface* NormalImg = bIsExpanded ? this->Button_ExpandedMaterial : this->Button_CollapsedMaterial;
+		UMaterialInterface* PressedImg = bIsExpanded ? this->Button_CollapsedMaterial : this->Button_ExpandedMaterial;
 
 		ButtonStyle.Normal.SetResourceObject(NormalImg);
 		ButtonStyle.Hovered.SetResourceObject(NormalImg);
 		ButtonStyle.Pressed.SetResourceObject(PressedImg);
 	}
 
-	ButtonStyle.Hovered.TintColor = HoverColor;
+	ButtonStyle.Hovered.TintColor = this->Button_HoverColor;
 
 	Button_Expand->SetStyle(ButtonStyle);
 }
