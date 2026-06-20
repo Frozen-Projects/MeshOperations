@@ -29,6 +29,30 @@ TSharedRef<SWidget> UWidget_TreeView_Item::RebuildWidget()
 	return Super::RebuildWidget();
 }
 
+void UWidget_TreeView_Item::UpdateExpansionVisuals(bool bIsExpanded)
+{
+	if (!IsValid(this->Button_Expand))
+	{
+		return;
+	}
+
+	FButtonStyle ButtonStyle = Button_Expand->GetStyle();
+
+	if (IsValid(this->Button_ExpandedMaterial) && IsValid(this->Button_CollapsedMaterial))
+	{
+		UMaterialInterface* NormalImg = bIsExpanded ? this->Button_ExpandedMaterial : this->Button_CollapsedMaterial;
+		UMaterialInterface* PressedImg = bIsExpanded ? this->Button_CollapsedMaterial : this->Button_ExpandedMaterial;
+
+		ButtonStyle.Normal.SetResourceObject(NormalImg);
+		ButtonStyle.Hovered.SetResourceObject(NormalImg);
+		ButtonStyle.Pressed.SetResourceObject(PressedImg);
+	}
+
+	ButtonStyle.Hovered.TintColor = this->Button_HoverColor;
+
+	Button_Expand->SetStyle(ButtonStyle);
+}
+
 void UWidget_TreeView_Item::ApplyHighlightColor_Internal(UTreeView_Data* TreeView_Data)
 {
 	if (!IsValid(TreeView_Data) || !IsValid(this->Title))
@@ -43,23 +67,14 @@ void UWidget_TreeView_Item::ApplyHighlightColor_Internal(UTreeView_Data* TreeVie
 	this->Title->SetColorAndOpacity(NewColor);
 }
 
-void UWidget_TreeView_Item::ApplyHighlightColor()
+void UWidget_TreeView_Item::UpdateTitle_Internal(UTreeView_Data* TreeView_Data)
 {
-	this->ApplyHighlightColor_Internal(Cast<UTreeView_Data>(this->GetListItem()));
-}
-
-void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
-{
-	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
-
-	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(ListItemObject);
-
-	if (!IsValid(TreeView_Data) || !IsValid(TreeView_Data->Target_Component))
+	if (!IsValid(TreeView_Data) || !IsValid(TreeView_Data->Target_Component) || !IsValid(this->Title))
 	{
 		return;
 	}
 
-	switch (TreeView_Data->HierarchyName)
+	switch (TreeView_Data->NameType)
 	{
 		case EHierarchyNames::Object:
 		{
@@ -115,6 +130,49 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 			break;
 		}
 	}
+}
+
+void UWidget_TreeView_Item::ApplyHighlightColor()
+{
+	this->ApplyHighlightColor_Internal(Cast<UTreeView_Data>(this->GetListItem()));
+}
+
+void UWidget_TreeView_Item::UpdateTitle()
+{
+	this->UpdateTitle_Internal(Cast<UTreeView_Data>(this->GetListItem()));
+}
+
+void UWidget_TreeView_Item::On_Expand_Children()
+{
+	UTreeView* OwningTreeView = Cast<UTreeView>(GetOwningListView());
+
+	if (!IsValid(OwningTreeView))
+	{
+		return;
+	}
+
+	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(this->GetListItem());
+
+	if (!IsValid(TreeView_Data))
+	{
+		return;
+	}
+
+	OwningTreeView->SetItemExpansion(TreeView_Data, !IsListItemExpanded());
+}
+
+void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
+
+	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(ListItemObject);
+
+	if (!IsValid(TreeView_Data) || !IsValid(TreeView_Data->Target_Component))
+	{
+		return;
+	}
+
+	this->UpdateTitle_Internal(TreeView_Data);
 
 	this->ApplyHighlightColor_Internal(TreeView_Data);
 
@@ -144,47 +202,4 @@ void UWidget_TreeView_Item::NativeOnItemExpansionChanged(bool bIsExpanded)
 {
 	IUserObjectListEntry::NativeOnItemExpansionChanged(bIsExpanded);
 	this->UpdateExpansionVisuals(bIsExpanded);
-}
-
-void UWidget_TreeView_Item::On_Expand_Children()
-{
-	UTreeView* OwningTreeView = Cast<UTreeView>(GetOwningListView());
-
-	if (!IsValid(OwningTreeView))
-	{
-		return;
-	}
-
-	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(this->GetListItem());
-
-	if (!IsValid(TreeView_Data))
-	{
-		return;
-	}
-
-	OwningTreeView->SetItemExpansion(TreeView_Data, !IsListItemExpanded());
-}
-
-void UWidget_TreeView_Item::UpdateExpansionVisuals(bool bIsExpanded)
-{
-	if (!IsValid(this->Button_Expand))
-	{
-		return;
-	}
-
-	FButtonStyle ButtonStyle = Button_Expand->GetStyle();
-
-	if (IsValid(this->Button_ExpandedMaterial) && IsValid(this->Button_CollapsedMaterial))
-	{
-		UMaterialInterface* NormalImg = bIsExpanded ? this->Button_ExpandedMaterial : this->Button_CollapsedMaterial;
-		UMaterialInterface* PressedImg = bIsExpanded ? this->Button_CollapsedMaterial : this->Button_ExpandedMaterial;
-
-		ButtonStyle.Normal.SetResourceObject(NormalImg);
-		ButtonStyle.Hovered.SetResourceObject(NormalImg);
-		ButtonStyle.Pressed.SetResourceObject(PressedImg);
-	}
-
-	ButtonStyle.Hovered.TintColor = this->Button_HoverColor;
-
-	Button_Expand->SetStyle(ButtonStyle);
 }

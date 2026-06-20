@@ -64,6 +64,25 @@ FString UWidget_TreeView::GetEnumDisplayName(EHierarchyNames In_Enum)
 	return EnumPtr->GetNameStringByValue((int64)In_Enum);
 }
 
+EHierarchyNames UWidget_TreeView::GetEnumValueByName(const FString& InName)
+{
+	UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
+
+	if (!EnumPtr)
+	{
+		return EHierarchyNames::None;
+	}
+
+	const int64 EnumValue = EnumPtr->GetValueByName(FName(*InName));
+
+	if (EnumValue == INDEX_NONE)
+	{
+		return EHierarchyNames::None;
+	}
+
+	return static_cast<EHierarchyNames>(EnumValue);
+}
+
 UTreeView_Data* UWidget_TreeView::GetOrCreateData(USceneComponent* InComponent, int32 InDepth)
 {
 	if (!IsValid(InComponent))
@@ -80,6 +99,7 @@ UTreeView_Data* UWidget_TreeView::GetOrCreateData(USceneComponent* InComponent, 
 	UTreeView_Data* NewData = NewObject<UTreeView_Data>(this);
 	NewData->Target_Component = InComponent;
 	NewData->Padding_Depth = InDepth;
+	NewData->NameType = UWidget_TreeView::GetEnumValueByName(this->Search_Type->GetSelectedOption());
 
 	DataCache.Add(InComponent, NewData);
 	return NewData;
@@ -147,6 +167,22 @@ void UWidget_TreeView::SwitchHiglights()
 		if (UWidget_TreeView_Item* Item = Cast<UWidget_TreeView_Item>(EntryWidget))
 		{
 			Item->ApplyHighlightColor();
+		}
+	}
+}
+
+void UWidget_TreeView::RefreshDisplayedTitles()
+{
+	if (!IsValid(this->Hierarchy))
+	{
+		return;
+	}
+
+	for (UUserWidget* EntryWidget : this->Hierarchy->GetDisplayedEntryWidgets())
+	{
+		if (UWidget_TreeView_Item* Item = Cast<UWidget_TreeView_Item>(EntryWidget))
+		{
+			Item->UpdateTitle();
 		}
 	}
 }
@@ -325,71 +361,53 @@ void UWidget_TreeView::On_Search_Type_Changed(FString SelectedItem, ESelectInfo:
 {
 	if (SelectionType != ESelectInfo::Direct && SelectionType != ESelectInfo::OnKeyPress && SelectionType != ESelectInfo::OnMouseClick)
 	{
-		this->Search_Box->bIsEnabled = false;
+		this->Search_Box->SetIsEnabled(false);
 		return;
 	}
 
-	UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
-
-	if (!EnumPtr)
-	{
-		this->Search_Box->bIsEnabled = false;
-		return;
-	}
-
-	const int64 EnumValue = EnumPtr->GetValueByName(FName(*SelectedItem));
-
-	if (EnumValue == INDEX_NONE)
-	{
-		this->Search_Box->bIsEnabled = false;
-		return;
-	}
-
-	const EHierarchyNames FoundState = static_cast<EHierarchyNames>(EnumValue);
+	const EHierarchyNames FoundState = this->GetEnumValueByName(SelectedItem);
 
 	switch (FoundState)
 	{
 		case EHierarchyNames::Object:
 		{
-			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetIsEnabled(true);
 			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Object Name...")));
 			break;
 		}
 
 		case EHierarchyNames::Product:
 		{
-			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetIsEnabled(true);
 			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Product Name...")));
 			break;
 		}
 
 		case EHierarchyNames::Instance:
 		{
-			this->Search_Box->bIsEnabled = true;
+			this->Search_Box->SetIsEnabled(true);
 			this->Search_Box->SetHintText(FText::FromString(TEXT("Search by Instance Name...")));
 			break;
 		}
 
 		default:
 		{
-			this->Search_Box->bIsEnabled = false;
+			this->Search_Box->SetIsEnabled(false);
 			return;
 		}
 	}
 
-	TArray<UObject*> ListItems = this->Hierarchy->GetListItems();
+	TArray<UTreeView_Data*> AllData;
+	this->DataCache.GenerateValueArray(AllData);
 
-	for (UObject* Each_Item : ListItems)
+	for (UTreeView_Data* Each_Data : AllData)
 	{
-		UTreeView_Data* Each_Data = Cast<UTreeView_Data>(Each_Item);
-
-		if (!IsValid(Each_Data))
+		if (IsValid(Each_Data))
 		{
-			continue;
+			Each_Data->NameType = FoundState;
 		}
-
-		Each_Data->HierarchyName = FoundState;
 	}
 
+	this->RefreshDisplayedTitles();
 	this->Hierarchy->RequestRefresh();
 }

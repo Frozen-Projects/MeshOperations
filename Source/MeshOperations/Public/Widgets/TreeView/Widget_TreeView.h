@@ -29,6 +29,8 @@ private:
 	UFUNCTION()
 	static FString GetEnumDisplayName(EHierarchyNames In_Enum);
 
+	static EHierarchyNames GetEnumValueByName(const FString& InName);
+
 	UFUNCTION()
 	UTreeView_Data* GetOrCreateData(USceneComponent* InComponent, int32 InDepth);
 
@@ -43,6 +45,9 @@ private:
 
 	UFUNCTION()
 	virtual void SwitchHiglights();
+
+	UFUNCTION()
+	virtual void RefreshDisplayedTitles();
 
 	UFUNCTION()
 	virtual void On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod);

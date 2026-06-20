@@ -14,9 +14,10 @@ class UWidget_TreeView;
 UENUM(BlueprintType)
 enum class EHierarchyNames : uint8
 {
-	Object = 0		UMETA(DisplayName = "Object"),
-	Product = 1		UMETA(DisplayName = "Product"),
-	Instance = 2	UMETA(DisplayName = "Instance"),
+	None = 0		UMETA(DisplayName = "None"),
+	Object = 1		UMETA(DisplayName = "Object"),
+	Product = 2		UMETA(DisplayName = "Product"),
+	Instance = 3	UMETA(DisplayName = "Instance"),
 };
 ENUM_CLASS_FLAGS(EHierarchyNames)
 
@@ -40,7 +41,7 @@ public:
 	bool bIsCurrentHighlight = false;
 
 	UPROPERTY(BlueprintReadWrite)
-	EHierarchyNames HierarchyName = EHierarchyNames::Product;
+	EHierarchyNames NameType = EHierarchyNames::Product;
 
 };
 
@@ -52,19 +53,22 @@ class MESHOPERATIONS_API UWidget_TreeView_Item : public UUserWidget, public IUse
 private:
 
 	UFUNCTION()
+	virtual void UpdateExpansionVisuals(bool bIsExpanded);
+	
+	UFUNCTION()
 	virtual void ApplyHighlightColor_Internal(UTreeView_Data* TreeView_Data);
+
+	UFUNCTION()
+	virtual void UpdateTitle_Internal(UTreeView_Data* TreeView_Data);
+
+	UFUNCTION()
+	virtual void On_Expand_Children();
 
 	UFUNCTION()
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
 	UFUNCTION()
 	virtual void NativeOnItemExpansionChanged(bool bIsExpanded) override;
-
-	UFUNCTION()
-	virtual void On_Expand_Children();
-
-	UFUNCTION()
-	virtual void UpdateExpansionVisuals(bool bIsExpanded);
 
 public:
 
@@ -74,7 +78,11 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
+	UFUNCTION()
 	virtual void ApplyHighlightColor();
+
+	UFUNCTION()
+	virtual void UpdateTitle();
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* Main_Canvas = nullptr;
