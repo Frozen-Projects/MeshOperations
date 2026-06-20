@@ -96,7 +96,7 @@ void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
 				break;
 			}
 
-			const FString SecondTag = TreeView_Data->Target_Component->ComponentTags[0].ToString();
+			const FString SecondTag = TreeView_Data->Target_Component->ComponentTags[1].ToString();
 
 			if (!SecondTag.Contains(INSTANCE_NAME_TAG_PREFIX))
 			{
