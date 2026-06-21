@@ -5,6 +5,7 @@
 #include "Runtime/UMG/Public/UMG.h"
 
 #include "Widgets/TreeView/Widget_TreeView_Includes.h"
+#include "MeshOperationsBPLibrary.h"
 
 #include "Widget_TreeView_Item.generated.h"
 

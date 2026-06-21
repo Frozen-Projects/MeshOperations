@@ -50,6 +50,9 @@ private:
 	virtual void RefreshDisplayedTitles();
 
 	UFUNCTION()
+	virtual void ClearSearchResults();
+
+	UFUNCTION()
 	virtual void On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod);
 
 	UFUNCTION()

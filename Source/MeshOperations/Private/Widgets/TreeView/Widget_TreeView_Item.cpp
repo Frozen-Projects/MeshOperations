@@ -1,6 +1,5 @@
 #include "Widgets/TreeView/Widget_TreeView_Item.h"
 #include "Widgets/TreeView/Widget_TreeView.h"
-#include "MeshOperationsBPLibrary.h"
 
 void UWidget_TreeView_Item::NativePreConstruct()
 {

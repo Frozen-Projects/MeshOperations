@@ -187,6 +187,15 @@ void UWidget_TreeView::RefreshDisplayedTitles()
 	}
 }
 
+void UWidget_TreeView::ClearSearchResults()
+{
+	this->MatchingComponents.Empty();
+	this->ClearHighlights();
+	this->Current_Index = 0;
+	this->Max_Index = 0;
+	this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
+}
+
 void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit::Type CommitMethod)
 {
 	if (CommitMethod != ETextCommit::OnEnter)
@@ -196,11 +205,7 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 
 	if (SearchText.IsEmpty() || !IsValid(this->Root))
 	{
-		this->MatchingComponents.Empty();
-		this->ClearHighlights();
-		this->Current_Index = 0;
-		this->Max_Index = 0;
-		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
+		this->ClearSearchResults();
 		return;
 	}
 
@@ -209,19 +214,61 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 
 	if (AllComponents.IsEmpty())
 	{
-		this->MatchingComponents.Empty();
-		this->ClearHighlights();
-		this->Current_Index = 0;
-		this->Max_Index = 0;
-		this->Title_Index->SetText(FText::FromString(TEXT("0 of 0")));
+		this->ClearSearchResults();
 		return;
 	}
 	
-	this->ClearHighlights();
+	this->ClearSearchResults();
+
+	const EHierarchyNames CurrentState = UWidget_TreeView::GetEnumValueByName(this->Search_Type->GetSelectedOption());
+	FString SearchTarget;
 
 	for (USceneComponent* Component : AllComponents)
 	{
-		if (Component->ComponentTags.Num() > 0 && Component->ComponentTags[0].ToString().Contains(SearchText.ToString()))
+		switch (CurrentState)
+		{
+			case EHierarchyNames::Object:
+			{
+				SearchTarget = UMeshOperationsBPLibrary::GetObjectNameForPackage(Component);
+				break;
+			}
+
+			case EHierarchyNames::Product:
+			{
+				if (Component->ComponentTags.Num() > 0)
+				{
+					SearchTarget = Component->ComponentTags[0].ToString();
+					break;
+				}
+
+				else
+				{
+					return;
+				}
+			}
+
+
+			case EHierarchyNames::Instance:
+			{
+				if (Component->ComponentTags.Num() >= 2)
+				{
+					SearchTarget = Component->ComponentTags[1].ToString();
+					break;
+				}
+
+				else
+				{
+					return;
+				}
+			}
+
+			default:
+			{
+				return;
+			}
+		}
+
+		if (SearchTarget.Contains(SearchText.ToString()))
 		{
 			TArray<USceneComponent*> Temp_Parents;
 			Component->GetParentComponents(Temp_Parents);
@@ -359,15 +406,17 @@ void UWidget_TreeView::On_Search_Previous()
 
 void UWidget_TreeView::On_Search_Type_Changed(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+	this->ClearSearchResults();
+
 	if (SelectionType != ESelectInfo::Direct && SelectionType != ESelectInfo::OnKeyPress && SelectionType != ESelectInfo::OnMouseClick)
 	{
 		this->Search_Box->SetIsEnabled(false);
 		return;
 	}
 
-	const EHierarchyNames FoundState = this->GetEnumValueByName(SelectedItem);
+	const EHierarchyNames SelectedState = this->GetEnumValueByName(SelectedItem);
 
-	switch (FoundState)
+	switch (SelectedState)
 	{
 		case EHierarchyNames::Object:
 		{
@@ -404,7 +453,7 @@ void UWidget_TreeView::On_Search_Type_Changed(FString SelectedItem, ESelectInfo:
 	{
 		if (IsValid(Each_Data))
 		{
-			Each_Data->NameType = FoundState;
+			Each_Data->NameType = SelectedState;
 		}
 	}
 
