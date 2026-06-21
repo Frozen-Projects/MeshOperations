@@ -152,6 +152,7 @@ void UWidget_TreeView::ClearHighlights()
 		Each_Data->bIsCurrentHighlight = false;
 	}
 
+	this->SwitchHiglights();
 	this->Hierarchy->RequestRefresh();
 }
 
