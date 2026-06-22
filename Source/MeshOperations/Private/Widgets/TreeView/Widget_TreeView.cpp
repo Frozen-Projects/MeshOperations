@@ -239,28 +239,29 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 				if (Component->ComponentTags.Num() > 0)
 				{
 					SearchTarget = Component->ComponentTags[0].ToString();
-					break;
 				}
 
 				else
 				{
-					return;
+					continue;
 				}
-			}
 
+				break;
+			}
 
 			case EHierarchyNames::Instance:
 			{
 				if (Component->ComponentTags.Num() >= 2)
 				{
 					SearchTarget = Component->ComponentTags[1].ToString();
-					break;
 				}
 
 				else
 				{
-					return;
+					continue;
 				}
+
+				break;
 			}
 
 			default:

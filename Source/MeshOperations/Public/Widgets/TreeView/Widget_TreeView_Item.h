@@ -46,7 +46,7 @@ public:
 
 };
 
-UCLASS()
+UCLASS(Abstract, meta = (DisableNativeTick))
 class MESHOPERATIONS_API UWidget_TreeView_Item : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
@@ -76,7 +76,6 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
 	UFUNCTION()

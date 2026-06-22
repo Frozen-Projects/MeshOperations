@@ -18,11 +18,6 @@ void UWidget_TreeView_Item::NativeDestruct()
 	Super::NativeDestruct();
 }
 
-void UWidget_TreeView_Item::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
-{
-	Super::NativeTick(MyGeometry, InDeltaTime);
-}
-
 TSharedRef<SWidget> UWidget_TreeView_Item::RebuildWidget()
 {
 	return Super::RebuildWidget();
