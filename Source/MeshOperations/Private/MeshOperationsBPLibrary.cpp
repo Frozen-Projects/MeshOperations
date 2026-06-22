@@ -1088,3 +1088,63 @@ bool UMeshOperationsBPLibrary::IsInBounds(USceneComponent* Target_Comp, FVector 
 
 	return MyBox.IsInside(ComponentLocation);
 }
+
+void UMeshOperationsBPLibrary::Check_Assembly(USceneComponent* Target_Root, bool bSpawnBillboardForOnlyProblems)
+{
+    if (!IsValid(Target_Root))
+    {
+        return;
+    }
+
+	FVector Origin;
+	FVector Extent;
+    UMeshOperationsBPLibrary::GetSceneComponentBounds(Origin, Extent, Target_Root);
+
+	UBoxComponent* BoxComp = NewObject<UBoxComponent>(Target_Root->GetOuter());
+	BoxComp->SetMobility(EComponentMobility::Movable);
+	BoxComp->SetHiddenInGame(false);
+	BoxComp->SetLineThickness(10.0f);
+	BoxComp->SetWorldLocation(Origin);
+	BoxComp->SetBoxExtent(Extent);
+	BoxComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+    BoxComp->AttachToComponent(Target_Root, FAttachmentTransformRules::KeepWorldTransform);
+	BoxComp->RegisterComponent();
+
+	TArray<USceneComponent*> All_Components;
+	Target_Root->GetChildrenComponents(true, All_Components);
+	All_Components.Add(Target_Root);
+
+	auto BillboardCallback = [Target_Root](USceneComponent* Component, double Size = 0.25)
+		{
+            if (!IsValid(Component))
+            {
+                return;
+            }
+
+			UBillboardComponent* Billboard = NewObject<UBillboardComponent>(Component->GetOuter());
+			Billboard->SetMobility(EComponentMobility::Movable);
+			Billboard->SetHiddenInGame(false);
+			Billboard->SetWorldLocation(Component->GetComponentLocation());
+			Billboard->SetWorldScale3D(FVector(Size));
+			Billboard->AttachToComponent(Target_Root, FAttachmentTransformRules::KeepWorldTransform);
+			Billboard->RegisterComponent();
+		};
+
+    for (USceneComponent* Each_Component : All_Components)
+    {
+		if (!UMeshOperationsBPLibrary::IsInBounds(Each_Component, Origin, Extent))
+        {
+			UE_LOG(LogTemp, Warning, TEXT("%s is out of bounds of the assembly."), *UMeshOperationsBPLibrary::GetObjectNameForPackage(Each_Component));
+
+            if (bSpawnBillboardForOnlyProblems)
+            {
+                BillboardCallback(Each_Component, 2.0);
+            }
+        }
+
+        if (!bSpawnBillboardForOnlyProblems)
+        {
+			BillboardCallback(Each_Component);
+        }
+    }
+}

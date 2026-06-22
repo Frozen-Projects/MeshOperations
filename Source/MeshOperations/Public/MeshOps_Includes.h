@@ -4,9 +4,13 @@
 #include "Kismet/KismetMathLibrary.h"
 
 #include "UObject/Object.h"
+#include "UObject/ConstructorHelpers.h"
+
 #include "Components/SceneComponent.h"
 #include "Components/ActorComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BillboardComponent.h"
+#include "Components/BoxComponent.h"
 
 #include "ProceduralMeshComponent.h"
 #include "ProceduralMeshConversion.h"
