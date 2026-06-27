@@ -92,4 +92,7 @@ class UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Check Assembly", Keywords = "check, assembly"), Category = "Frozen Forest|Mesh Operations")
     static MESHOPERATIONS_API void Check_Assembly(USceneComponent* Target_Root, bool bSpawnBillboardForOnlyProblems = false);
 
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Change Material Instance Parent", Keywords = "change, material, instance, parent"), Category = "Frozen Forest|Mesh Operations|Materials")
+	static MESHOPERATIONS_API bool ChangeMaterialInstanceParent(UMaterialInstanceDynamic* MaterialInstance, UMaterialInterface* NewParent);
+
 };

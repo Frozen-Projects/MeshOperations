@@ -1148,3 +1148,24 @@ void UMeshOperationsBPLibrary::Check_Assembly(USceneComponent* Target_Root, bool
         }
     }
 }
+
+bool UMeshOperationsBPLibrary::ChangeMaterialInstanceParent(UMaterialInstanceDynamic* MaterialInstance, UMaterialInterface* NewParent)
+{
+    if (!IsValid(MaterialInstance))
+    {
+        return false;
+    }
+
+    if (!IsValid(NewParent))
+    {
+        return false;
+    }
+
+	MaterialInstance->Parent = NewParent;
+	MaterialInstance->PostEditChange();
+    //MaterialInstance->RecacheUniformExpressions(true);
+
+    FMaterialUpdateContext MaterialUpdateContext;
+    MaterialUpdateContext.AddMaterialInstance(MaterialInstance);
+	return true;
+}
