@@ -909,7 +909,10 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
     NewStaticMesh->bAllowCPUAccess = true;
     NewStaticMesh->NeverStream = true;
 	NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
+
+#if WITH_EDITORONLY_DATA
     NewStaticMesh->SetRayTracingProxySettings(StaticMesh->GetRayTracingProxySettings());
+#endif
 
     NewStaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
     FStaticMeshRenderData* NewRenderData = NewStaticMesh->GetRenderData();
@@ -1162,8 +1165,12 @@ bool UMeshOperationsBPLibrary::ChangeMaterialInstanceParent(UMaterialInstanceDyn
     }
 
 	MaterialInstance->Parent = NewParent;
+
+#if WITH_EDITORONLY_DATA
 	MaterialInstance->PostEditChange();
-    //MaterialInstance->RecacheUniformExpressions(true);
+#endif
+
+    MaterialInstance->RecacheUniformExpressions(true);
 
     FMaterialUpdateContext MaterialUpdateContext;
     MaterialUpdateContext.AddMaterialInstance(MaterialInstance);
