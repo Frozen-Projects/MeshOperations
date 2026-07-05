@@ -87,7 +87,7 @@ void UWidget_TreeView_Item::UpdateTitle_Internal(UTreeView_Data* TreeView_Data)
 
 			const FString FirstTag = TreeView_Data->Target_Component->ComponentTags[0].ToString();
 
-			if (!FirstTag.Contains(PRODUCT_NAME_TAG_PREFIX))
+			if (!FirstTag.Contains(FIELD_PRODUCT))
 			{
 				this->Title->SetText(FText::FromString(UNNAMED_PRODUCT));
 				break;
@@ -107,7 +107,7 @@ void UWidget_TreeView_Item::UpdateTitle_Internal(UTreeView_Data* TreeView_Data)
 
 			const FString SecondTag = TreeView_Data->Target_Component->ComponentTags[1].ToString();
 
-			if (!SecondTag.Contains(INSTANCE_NAME_TAG_PREFIX))
+			if (!SecondTag.Contains(FIELD_INSTANCE))
 			{
 				this->Title->SetText(FText::FromString(UNNAMED_INSTANCE));
 				break;

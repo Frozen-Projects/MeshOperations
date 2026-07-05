@@ -31,7 +31,7 @@
 #include "Builders/GLTFBuilder.h"
 #include "UserData/GLTFMaterialUserData.h"
 
-#define PRODUCT_NAME_TAG_PREFIX TEXT("Product_Name")
-#define INSTANCE_NAME_TAG_PREFIX TEXT("Instance_Name")
+#define FIELD_PRODUCT TEXT("Product_Name")
+#define FIELD_INSTANCE TEXT("Instance_Name")
 #define UNNAMED_PRODUCT TEXT("Unnamed_Product")
 #define UNNAMED_INSTANCE TEXT("Unnamed_Instance")
