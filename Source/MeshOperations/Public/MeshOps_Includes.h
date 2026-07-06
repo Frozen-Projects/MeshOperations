@@ -31,6 +31,15 @@
 #include "Builders/GLTFBuilder.h"
 #include "UserData/GLTFMaterialUserData.h"
 
+#if WITH_EDITOR
+#include "Kismet2/KismetEditorUtilities.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "Engine/Blueprint.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
+#include "ScopedTransaction.h"
+#endif
+
 #define FIELD_PRODUCT TEXT("Product_Name")
 #define FIELD_INSTANCE TEXT("Instance_Name")
 #define UNNAMED_PRODUCT TEXT("Unnamed_Product")

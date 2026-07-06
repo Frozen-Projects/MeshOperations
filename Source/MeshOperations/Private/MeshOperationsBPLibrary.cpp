@@ -627,77 +627,65 @@ void UMeshOperationsBPLibrary::DeleteEmptyRoots(USceneComponent* AssetRoot)
     }
 }
 
-void UMeshOperationsBPLibrary::DeleteEmptyParents(USceneComponent* AssetRoot, UObject* Outer, FDeleteParents DelegateDeleteParents)
+void UMeshOperationsBPLibrary::DeleteEmptyParents(USceneComponent* AssetRoot, UObject* Outer)
 {
-    AsyncTask(ENamedThreads::GameThread, [DelegateDeleteParents, AssetRoot, Outer]()
+    TArray<USceneComponent*> ChildrenComps;
+    AssetRoot->GetChildrenComponents(true, ChildrenComps);
+
+    if (ChildrenComps.Num() > 1)
+    {
+        bool IsProcessFinished = false;
+        TMap<USceneComponent*, bool> AnyEmptyParentLeft;
+
+        while (IsProcessFinished == false)
         {
-            // Get all children components at start.
-            TArray<USceneComponent*> ChildrenComps;
-            AssetRoot->GetChildrenComponents(true, ChildrenComps);
-
-            if (ChildrenComps.Num() > 1)
+            for (int32 ChildIndex = 0; ChildIndex < ChildrenComps.Num(); ChildIndex++)
             {
-                // Conditions.
-                bool IsProcessFinished = false;
-                TMap<USceneComponent*, bool> AnyEmptyParentLeft;
-
-                while (IsProcessFinished == false)
+                if (ChildrenComps[ChildIndex]->GetClass()->GetName() == TEXT("StaticMeshComponent") && ChildrenComps[ChildIndex]->GetAttachParent()->GetNumChildrenComponents() == 1)
                 {
-                    for (int32 ChildIndex = 0; ChildIndex < ChildrenComps.Num(); ChildIndex++)
+                    USceneComponent* EachChild = ChildrenComps[ChildIndex];
+                    USceneComponent* MiddleParent = EachChild->GetAttachParent();
+                    USceneComponent* GrandParent = MiddleParent->GetAttachParent();
+
+                    // We will use this name as static mesh's new name.
+                    const FString New_SMC_Name = MiddleParent->GetName();
+
+                    // Change middle parent's name and destroy it.
+                    FGuid MiddleParentSuffix = FGuid::NewGuid();
+                    const FString MiddleParentName = TEXT("DeletedSceneComp") + MiddleParentSuffix.ToString();
+                    MiddleParent->Rename(*MiddleParentName, Outer);
+                    MiddleParent->DestroyComponent(false);
+
+                    // Change target static mesh name.
+                    EachChild->AttachToComponent(GrandParent, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
+                    EachChild->Rename(*New_SMC_Name, Outer);
+
+                    // Check if there is any empty parent left.
+                    if (EachChild->GetAttachParent()->GetNumChildrenComponents() == 1)
                     {
-                        if (ChildrenComps[ChildIndex]->GetClass()->GetName() == TEXT("StaticMeshComponent") && ChildrenComps[ChildIndex]->GetAttachParent()->GetNumChildrenComponents() == 1)
-                        {
-                            USceneComponent* EachChild = ChildrenComps[ChildIndex];
-                            USceneComponent* MiddleParent = EachChild->GetAttachParent();
-                            USceneComponent* GrandParent = MiddleParent->GetAttachParent();
-
-                            // We will use this name as static mesh's new name.
-                            const FString New_SMC_Name = MiddleParent->GetName();
-
-                            // Change middle parent's name and destroy it.
-                            FGuid MiddleParentSuffix = FGuid::NewGuid();
-                            const FString MiddleParentName = TEXT("DeletedSceneComp") + MiddleParentSuffix.ToString();
-                            MiddleParent->Rename(*MiddleParentName, Outer);
-                            MiddleParent->DestroyComponent(false);
-
-                            // Change target static mesh name.
-                            EachChild->AttachToComponent(GrandParent, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
-                            EachChild->Rename(*New_SMC_Name, Outer);
-
-                            // Check if there is any empty parent left.
-                            if (EachChild->GetAttachParent()->GetNumChildrenComponents() == 1)
-                            {
-                                AnyEmptyParentLeft.Add(EachChild, true);
-                            }
-                        }
-                    }
-
-                    // If there is an empty parent, get related component and start loop again. 
-                    TArray<bool> Array_Bool_Values;
-                    AnyEmptyParentLeft.GenerateValueArray(Array_Bool_Values);
-
-                    if (Array_Bool_Values.Contains(true) == true)
-                    {
-                        AnyEmptyParentLeft.GenerateKeyArray(ChildrenComps);
-                        AnyEmptyParentLeft.Empty();
-                        IsProcessFinished = false;
-                    }
-
-                    else
-                    {
-                        AnyEmptyParentLeft.Empty();
-                        IsProcessFinished = true;
+                        AnyEmptyParentLeft.Add(EachChild, true);
                     }
                 }
             }
 
-            AsyncTask(ENamedThreads::GameThread, [DelegateDeleteParents]()
-                {
-                    DelegateDeleteParents.ExecuteIfBound(true);
-                }
-            );
+            // If there is an empty parent, get related component and start loop again. 
+            TArray<bool> Array_Bool_Values;
+            AnyEmptyParentLeft.GenerateValueArray(Array_Bool_Values);
+
+            if (Array_Bool_Values.Contains(true) == true)
+            {
+                AnyEmptyParentLeft.GenerateKeyArray(ChildrenComps);
+                AnyEmptyParentLeft.Empty();
+                IsProcessFinished = false;
+            }
+
+            else
+            {
+                AnyEmptyParentLeft.Empty();
+                IsProcessFinished = true;
+            }
         }
-    );
+    }
 }
 
 void UMeshOperationsBPLibrary::OptimizeCenter(USceneComponent* AssetRoot)
@@ -708,17 +696,47 @@ void UMeshOperationsBPLibrary::OptimizeCenter(USceneComponent* AssetRoot)
     }
 
     FVector Origin, Extent;
-	AssetRoot->GetOwner()->GetActorBounds(true, Origin, Extent, true);
-	const FVector ActorLocation = AssetRoot->GetOwner()->GetActorLocation();
-	const FVector Offset = ActorLocation - Origin;
+    AssetRoot->GetOwner()->GetActorBounds(true, Origin, Extent, true);
+    const FVector ActorLocation = AssetRoot->GetOwner()->GetActorLocation();
+    const FVector Offset = ActorLocation - Origin;
 
     TArray<USceneComponent*> Children;
     AssetRoot->GetChildrenComponents(false, Children);
 
     for (USceneComponent* Each_Child : Children)
     {
-		Each_Child->AddRelativeLocation(Offset, false, nullptr, ETeleportType::None);
+        Each_Child->AddRelativeLocation(Offset, false, nullptr, ETeleportType::None);
     }
+
+#if WITH_EDITOR
+    AActor* OwnerActor = AssetRoot->GetOwner();
+    if (UBlueprint* Blueprint = UBlueprint::GetBlueprintFromClass(OwnerActor->GetClass()))
+    {
+        if (USimpleConstructionScript* SCS = Blueprint->SimpleConstructionScript)
+        {
+            Blueprint->Modify();
+
+            for (USceneComponent* Each_Child : Children)
+            {
+                USCS_Node* Node = SCS->FindSCSNode(Each_Child->GetFName());
+                if (!Node)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("OptimizeCenter: no SCS node for '%s' (native or renamed component?), template left unchanged."), *Each_Child->GetName());
+                    continue;
+                }
+
+                if (USceneComponent* Template = Cast<USceneComponent>(Node->ComponentTemplate))
+                {
+                    Template->Modify();
+                    Template->SetRelativeLocation_Direct(Each_Child->GetRelativeLocation());
+                }
+            }
+
+            FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+            Blueprint->MarkPackageDirty();
+        }
+    }
+#endif
 }
 
 void UMeshOperationsBPLibrary::OptimizeHeight(USceneComponent* AssetRoot, float Z_Offset)
