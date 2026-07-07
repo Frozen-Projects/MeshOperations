@@ -6,6 +6,8 @@
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
 
+#include "Engine/StaticMeshActor.h"
+
 #include "Components/SceneComponent.h"
 #include "Components/ActorComponent.h"
 #include "Components/StaticMeshComponent.h"

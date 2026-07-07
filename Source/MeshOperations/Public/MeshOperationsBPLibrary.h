@@ -3,11 +3,11 @@
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "MeshOps_Includes.h"
-#include "MeshOperationsBPLibrary.generated.h"
 
-UDELEGATE(BlueprintAuthorityOnly)
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FDelegateGLTFExport, bool, bIsSuccessfull, FGLTFExportMessages, OutMessages);
+#include "MeshOps_Includes.h"
+#include "MeshOps_Structs.h"
+
+#include "MeshOperationsBPLibrary.generated.h"
 
 UCLASS()
 class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
@@ -50,8 +50,17 @@ class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLib
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Delete Empty Roots", Keywords = "optimize,hierarchy,empty,root,roots"), Category = "Frozen Forest|Mesh Operations")
     static void DeleteEmptyRoots(USceneComponent* AssetRoot);
 
-    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Delete Empty Parents", Keywords = "optimize,hierarchy,empty,parent,parents"), Category = "Frozen Forest|Mesh Operations")
-    static void DeleteEmptyParents(USceneComponent* AssetRoot, UObject* Outer);
+    /*
+    * Delete Empty Parents
+    */
+	UFUNCTION(BlueprintCallable, CallInEditor, meta = (DisplayName = "Delete Empty Parents (Level Actors at Editor)", Keywords = "optimize, hierarchy, remove, empty, parent"), Category = "Frozen Forest|Mesh Operations")
+	static void DEP_LevelActors(AActor* TargetActor);
+
+    /*
+    * Delete Empty Parents
+    */
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Delete Empty Parents (Components at Runtime)", Keywords = "optimize, hierarchy, remove, empty, parent"), Category = "Frozen Forest|Mesh Operations")
+    static void DEP_Components_Runtime(USceneComponent* AssetRoot);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "OptimizeCenter", Keywords = "optimize,move,components,center"), Category = "Frozen Forest|Mesh Operations")
     static void OptimizeCenter(USceneComponent* AssetRoot);
@@ -66,7 +75,7 @@ class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLib
     static bool RenameComponent(UPARAM(ref)UObject* Target, UObject* Owner, FName NewName);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Export Level As GLTF", ToolTip = "Description.", Keywords = "level, export, gltf, glb"), Category = "Frozen Forest|Mesh Operations")
-    static void ExportLevelGLTF(bool bEnableQuantization, bool bResetLocation, bool bResetRotation, bool bResetScale, const FString ExportPath, TSet<AActor*> TargetActors, FDelegateGLTFExport DelegateGLTFExport);
+    static bool ExportLevelGLTF(FGLTFExportMessages& OutMessages, FGLTFExportOptionsStruct Options, FString ExportPath, TSet<AActor*> TargetActors);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Get Vertices Transform", Keywords = "get, vertex, vertices, locations, positions"), Category = "Frozen Forest|Mesh Operations")
     static bool GetVerticesTransforms(TArray<FTransform>& Out_Transform, UStaticMeshComponent* In_SMC, int32 LOD_Index, bool bUseRelativeLocation);

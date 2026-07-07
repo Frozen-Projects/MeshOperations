@@ -627,63 +627,162 @@ void UMeshOperationsBPLibrary::DeleteEmptyRoots(USceneComponent* AssetRoot)
     }
 }
 
-void UMeshOperationsBPLibrary::DeleteEmptyParents(USceneComponent* AssetRoot, UObject* Outer)
+void UMeshOperationsBPLibrary::DEP_LevelActors(AActor* TargetActor)
 {
+#if WITH_EDITOR
+    if (!IsValid(TargetActor))
+    {
+        return;
+    }
+
+    TArray<AActor*> AttachedActors;
+    TargetActor->GetAttachedActors(AttachedActors, true, true);
+
+    if (AttachedActors.IsEmpty())
+    {
+        return;
+    }
+
+    const FScopedTransaction Transaction(NSLOCTEXT("FFMesh", "DeleteEmptyParents", "Delete Empty Parent Actors"));
+
+    bool bProcessFinished = false;
+    TMap<AActor*, bool> AnyEmptyParentLeft;
+
+    while (!bProcessFinished)
+    {
+        for (AActor* EachActor : AttachedActors)
+        {
+            if (!IsValid(EachActor))
+            {
+                continue;
+            }
+
+            AActor* MiddleParentActor = EachActor->GetAttachParentActor();
+            if (!IsValid(MiddleParentActor))
+            {
+                continue;
+            }
+
+            TArray<AActor*> Siblings;
+            MiddleParentActor->GetAttachedActors(Siblings, true, false);
+
+            const bool bShouldDelete = EachActor->IsA<AStaticMeshActor>() && Siblings.Num() == 1;
+            if (!bShouldDelete)
+            {
+                continue;
+            }
+
+            AActor* GrandParent = MiddleParentActor->GetAttachParentActor();
+
+            if (!IsValid(GrandParent))
+            {
+                // Middle parent is a top-level actor (e.g. TargetActor itself) with
+                // nowhere to promote into — leave it as the hierarchy root.
+                continue;
+            }
+
+            // The Outliner shows the label, so that's the name to carry over.
+            const FString NewMeshLabel = MiddleParentActor->GetActorLabel();
+
+            EachActor->Modify();
+            MiddleParentActor->Modify();
+
+            // Promote first, then delete the now-childless grouping actor.
+            EachActor->AttachToActor(GrandParent, FAttachmentTransformRules::KeepWorldTransform);
+            EachActor->SetActorLabel(NewMeshLabel);
+            MiddleParentActor->Destroy();
+
+            TArray<AActor*> GrandParentChildren;
+            GrandParent->GetAttachedActors(GrandParentChildren, true, false);
+            if (GrandParentChildren.Num() == 1)
+            {
+                AnyEmptyParentLeft.Add(EachActor, true);
+            }
+        }
+
+        TArray<bool> BoolValues;
+        AnyEmptyParentLeft.GenerateValueArray(BoolValues);
+
+        if (BoolValues.Contains(true))
+        {
+            AnyEmptyParentLeft.GenerateKeyArray(AttachedActors);
+            AnyEmptyParentLeft.Empty();
+            bProcessFinished = false;
+        }
+
+        else
+        {
+            AnyEmptyParentLeft.Empty();
+            bProcessFinished = true;
+        }
+    }
+#endif
+}
+
+void UMeshOperationsBPLibrary::DEP_Components_Runtime(USceneComponent* AssetRoot)
+{   
+    UObject* Owner = AssetRoot->GetOwner();
+
     TArray<USceneComponent*> ChildrenComps;
     AssetRoot->GetChildrenComponents(true, ChildrenComps);
 
-    if (ChildrenComps.Num() > 1)
+    if (ChildrenComps.IsEmpty())
     {
-        bool IsProcessFinished = false;
-        TMap<USceneComponent*, bool> AnyEmptyParentLeft;
+        return;
+    }
 
-        while (IsProcessFinished == false)
+    bool IsProcessFinished = false;
+    TMap<USceneComponent*, bool> AnyEmptyParentLeft;
+
+    while (!IsProcessFinished)
+    {
+        for (USceneComponent* EachChild : ChildrenComps)
         {
-            for (int32 ChildIndex = 0; ChildIndex < ChildrenComps.Num(); ChildIndex++)
+			USceneComponent* MiddleParent = EachChild->GetAttachParent();
+			const bool bShouldDeleted = (EachChild->GetClass() == UStaticMeshComponent::StaticClass()) && MiddleParent->GetNumChildrenComponents() == 1;
+
+            if (!bShouldDeleted)
             {
-                if (ChildrenComps[ChildIndex]->GetClass()->GetName() == TEXT("StaticMeshComponent") && ChildrenComps[ChildIndex]->GetAttachParent()->GetNumChildrenComponents() == 1)
-                {
-                    USceneComponent* EachChild = ChildrenComps[ChildIndex];
-                    USceneComponent* MiddleParent = EachChild->GetAttachParent();
-                    USceneComponent* GrandParent = MiddleParent->GetAttachParent();
-
-                    // We will use this name as static mesh's new name.
-                    const FString New_SMC_Name = MiddleParent->GetName();
-
-                    // Change middle parent's name and destroy it.
-                    FGuid MiddleParentSuffix = FGuid::NewGuid();
-                    const FString MiddleParentName = TEXT("DeletedSceneComp") + MiddleParentSuffix.ToString();
-                    MiddleParent->Rename(*MiddleParentName, Outer);
-                    MiddleParent->DestroyComponent(false);
-
-                    // Change target static mesh name.
-                    EachChild->AttachToComponent(GrandParent, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
-                    EachChild->Rename(*New_SMC_Name, Outer);
-
-                    // Check if there is any empty parent left.
-                    if (EachChild->GetAttachParent()->GetNumChildrenComponents() == 1)
-                    {
-                        AnyEmptyParentLeft.Add(EachChild, true);
-                    }
-                }
+                continue;
             }
 
-            // If there is an empty parent, get related component and start loop again. 
-            TArray<bool> Array_Bool_Values;
-            AnyEmptyParentLeft.GenerateValueArray(Array_Bool_Values);
+            USceneComponent* GrandParent = MiddleParent->GetAttachParent();
 
-            if (Array_Bool_Values.Contains(true) == true)
-            {
-                AnyEmptyParentLeft.GenerateKeyArray(ChildrenComps);
-                AnyEmptyParentLeft.Empty();
-                IsProcessFinished = false;
-            }
+            // We will use this name as static mesh's new name.
+            const FString New_SMC_Name = MiddleParent->GetName();
 
-            else
+            // Change middle parent's name and destroy it.
+            FGuid MiddleParentSuffix = FGuid::NewGuid();
+            const FString MiddleParentName = TEXT("DeletedSceneComp") + MiddleParentSuffix.ToString();
+            MiddleParent->Rename(*MiddleParentName, Owner);
+            MiddleParent->DestroyComponent(false);
+
+            // Change target static mesh name.
+            EachChild->AttachToComponent(GrandParent, FAttachmentTransformRules::KeepWorldTransform, NAME_None);
+            EachChild->Rename(*New_SMC_Name, Owner);
+
+            // Check if there is any empty parent left.
+            if (EachChild->GetAttachParent()->GetNumChildrenComponents() == 1)
             {
-                AnyEmptyParentLeft.Empty();
-                IsProcessFinished = true;
+                AnyEmptyParentLeft.Add(EachChild, true);
             }
+        }
+
+        // If there is an empty parent, get related component and start loop again. 
+        TArray<bool> Array_Bool_Values;
+        AnyEmptyParentLeft.GenerateValueArray(Array_Bool_Values);
+
+        if (Array_Bool_Values.Contains(true))
+        {
+            AnyEmptyParentLeft.GenerateKeyArray(ChildrenComps);
+            AnyEmptyParentLeft.Empty();
+            IsProcessFinished = false;
+        }
+
+        else
+        {
+            AnyEmptyParentLeft.Empty();
+            IsProcessFinished = true;
         }
     }
 }
@@ -774,69 +873,113 @@ bool UMeshOperationsBPLibrary::RenameComponent(UPARAM(ref)UObject* Target, UObje
     return true;
 }
 
-void UMeshOperationsBPLibrary::ExportLevelGLTF(bool bEnableQuantization, bool bResetLocation, bool bResetRotation, bool bResetScale, const FString ExportPath, TSet<AActor*> TargetActors, FDelegateGLTFExport DelegateGLTFExport)
+bool UMeshOperationsBPLibrary::ExportLevelGLTF(FGLTFExportMessages& OutMessages, FGLTFExportOptionsStruct Options, FString ExportPath, TSet<AActor*> TargetActors)
 {
-    AsyncTask(ENamedThreads::AnyNormalThreadNormalTask, [DelegateGLTFExport, bEnableQuantization, bResetLocation, bResetRotation, bResetScale, ExportPath, TargetActors]()
+	FPaths::NormalizeFilename(ExportPath);
+	const FString ExportDirectory = FPaths::GetPath(ExportPath);
+
+    if (!FPaths::DirectoryExists(ExportDirectory))
+    {
+        return false;
+    }
+    
+    UWorld* CurrentWorld = GEngine->GetCurrentPlayWorld();
+
+    if (!CurrentWorld)
+    {
+        return false;
+    }
+
+    TArray<FVector> Array_Locations;
+    TArray<FVector> Array_Scales;
+
+    for (AActor* Actor : TargetActors)
+    {
+		USceneComponent* RootComp = Actor->GetRootComponent();
+
+        if (Options.bResetLocation)
         {
-            TArray<FVector> Array_Locations;
-            TArray<FRotator> Array_Rotations;
-            TArray<FVector> Array_Scales;
-
-            for (int32 ActorIndex = 0; ActorIndex < TargetActors.Num(); ActorIndex++)
-            {
-                if (bResetLocation == true)
-                {
-                    Array_Locations.Add(TargetActors.Array()[ActorIndex]->GetRootComponent()->GetComponentLocation());
-                    TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldLocation(FVector(0.0f), false, nullptr, ETeleportType::None);
-                }
-
-                if (bResetRotation == true)
-                {
-                    Array_Rotations.Add(TargetActors.Array()[ActorIndex]->GetRootComponent()->GetComponentRotation());
-                    TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldRotation(FQuat(0.0f), false, nullptr, ETeleportType::None);
-                }
-
-                if (bResetScale == true)
-                {
-                    Array_Scales.Add(TargetActors.Array()[ActorIndex]->GetRootComponent()->GetComponentScale());
-                    TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldScale3D(FVector(1.0f));
-                }
-            }
-
-            AsyncTask(ENamedThreads::GameThread, [DelegateGLTFExport, bEnableQuantization, bResetLocation, bResetRotation, bResetScale, Array_Locations, Array_Rotations, Array_Scales, ExportPath, TargetActors]()
-                {
-                    UGLTFExportOptions* ExportOptions = NewObject<UGLTFExportOptions>();
-                    ExportOptions->ResetToDefault();
-                    ExportOptions->bExportProxyMaterials = true;
-                    ExportOptions->bExportVertexColors = true;
-                    ExportOptions->bUseMeshQuantization = bEnableQuantization;
-
-                    FGLTFExportMessages ExportMessages;
-                    bool bIsExportSuccessful = UGLTFExporter::ExportToGLTF(GEngine->GetCurrentPlayWorld(), ExportPath, ExportOptions, TargetActors, ExportMessages);
-
-                    for (int32 ActorIndex = 0; ActorIndex < TargetActors.Num(); ActorIndex++)
-                    {
-                        if (bResetLocation == true)
-                        {
-                            TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldLocation(Array_Locations[ActorIndex], false, nullptr, ETeleportType::None);
-                        }
-
-                        if (bResetRotation == true)
-                        {
-                            TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldRotation(Array_Rotations[ActorIndex], false, nullptr, ETeleportType::None);
-                        }
-
-                        if (bResetScale == true)
-                        {
-                            TargetActors.Array()[ActorIndex]->GetRootComponent()->SetWorldScale3D(Array_Scales[ActorIndex]);
-                        }
-                    }
-
-                    DelegateGLTFExport.ExecuteIfBound(bIsExportSuccessful, ExportMessages);
-                }
-            );
+            Array_Locations.Add(RootComp->GetComponentLocation());
+            RootComp->SetWorldLocation(FVector(0.0f), false, nullptr, ETeleportType::None);
         }
-    );
+
+        if (Options.bResetScale)
+        {
+            Array_Scales.Add(RootComp->GetComponentScale());
+            RootComp->SetWorldScale3D(FVector(1.0f));
+        }
+    }
+
+    UGLTFExportOptions* ExportOptions = NewObject<UGLTFExportOptions>();
+    ExportOptions->ResetToDefault();
+   
+    // --- General Options ---
+    ExportOptions->ExportUniformScale = Options.ExportUniformScale;
+    ExportOptions->bExportPreviewMesh = Options.bExportPreviewMesh;
+    ExportOptions->bSkipNearDefaultValues = Options.bSkipNearDefaultValues;
+    ExportOptions->bIncludeCopyrightNotice = Options.bIncludeCopyrightNotice;
+    ExportOptions->bExportProxyMaterials = Options.bExportProxyMaterials;
+    ExportOptions->bUseImporterMaterialMapping = Options.bUseImporterMaterialMapping;
+
+    // --- Material Shading Model Options ---
+    ExportOptions->bExportUnlitMaterials = Options.bExportUnlitMaterials;
+    ExportOptions->bExportClearCoatMaterials = Options.bExportClearCoatMaterials;
+    ExportOptions->bExportClothMaterials = Options.bExportClothMaterials;
+    ExportOptions->bExportThinTranslucentMaterials = Options.bExportThinTranslucentMaterials;
+    ExportOptions->bExportSpecularGlossinessMaterials = Options.bExportSpecularGlossinessMaterials;
+    ExportOptions->bExportEmissiveStrength = Options.bExportEmissiveStrength;
+
+    // --- Material Bake Settings ---
+    ExportOptions->BakeMaterialInputs = Options.BakeMaterialInputs;
+    ExportOptions->DefaultMaterialBakeSize = Options.DefaultMaterialBakeSize;
+    ExportOptions->DefaultMaterialBakeFilter = Options.DefaultMaterialBakeFilter;
+    ExportOptions->DefaultMaterialBakeTiling = Options.DefaultMaterialBakeTiling;
+    ExportOptions->DefaultInputBakeSettings = Options.DefaultInputBakeSettings;
+
+    // --- Mesh Options ---
+    ExportOptions->DefaultLevelOfDetail = Options.DefaultLevelOfDetail;
+    ExportOptions->bExportSourceModel = Options.bExportSourceModel;
+    ExportOptions->bExportVertexColors = Options.bExportVertexColors;
+    ExportOptions->bExportVertexSkinWeights = Options.bExportVertexSkinWeights;
+    ExportOptions->bMakeSkinnedMeshesRoot = Options.bMakeSkinnedMeshesRoot;
+    ExportOptions->bUseMeshQuantization = Options.bUseMeshQuantization;
+    ExportOptions->bExportMorphTargets = Options.bExportMorphTargets;
+
+    // --- Animation Options ---
+    ExportOptions->bExportLevelSequences = Options.bExportLevelSequences;
+    ExportOptions->bExportAnimationSequences = Options.bExportAnimationSequences;
+
+    // --- Texture Options ---
+    ExportOptions->TextureImageFormat = Options.TextureImageFormat;
+    ExportOptions->TextureImageQuality = Options.TextureImageQuality;
+    ExportOptions->bExportTextureTransforms = Options.bExportTextureTransforms;
+    ExportOptions->bExportLightmaps = Options.bExportLightmaps;
+    ExportOptions->bAdjustNormalmaps = Options.bAdjustNormalmaps;
+
+    // --- Scene & Component Options ---
+    ExportOptions->bExportHiddenInGame = Options.bExportHiddenInGame;
+    ExportOptions->bExportLights = Options.bExportLights;
+    ExportOptions->bExportCameras = Options.bExportCameras;
+    ExportOptions->ExportMaterialVariants = Options.ExportMaterialVariants;
+
+    const bool bIsExportSuccessful = UGLTFExporter::ExportToGLTF(CurrentWorld, ExportPath, ExportOptions, TargetActors, OutMessages);
+
+    for (int32 ActorIndex = 0; ActorIndex < TargetActors.Num(); ActorIndex++)
+    {
+		USceneComponent* RootComp = TargetActors.Array()[ActorIndex]->GetRootComponent();
+
+        if (Options.bResetLocation)
+        {
+            RootComp->SetWorldLocation(Array_Locations[ActorIndex], false, nullptr, ETeleportType::None);
+        }
+
+        if (Options.bResetScale)
+        {
+            RootComp->SetWorldScale3D(Array_Scales[ActorIndex]);
+        }
+    }
+
+	return bIsExportSuccessful;
 }
 
 bool UMeshOperationsBPLibrary::GetVerticesTransforms(TArray<FTransform>& Out_Transform, UStaticMeshComponent* In_SMC, int32 LOD_Index, bool bUseRelativeLocation)
