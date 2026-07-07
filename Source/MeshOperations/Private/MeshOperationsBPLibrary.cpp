@@ -339,6 +339,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TA
 
     // Create a new static mesh description.
     UStaticMeshDescription* StaticMeshDesc = UStaticMesh::CreateStaticMeshDescription();
+   
     if (!StaticMeshDesc)
     {
         UE_LOG(LogTemp, Error, TEXT("Failed to create StaticMeshDescription."));
@@ -371,6 +372,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TA
     }
 
     const int32 NumTriangles = Indices.Num() / 3;
+    
     for (int32 Tri = 0; Tri < NumTriangles; Tri++)
     {
         TArray<FVertexInstanceID> TriangleVertexInstances;
@@ -527,10 +529,12 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FName Mesh_Name, const TAr
     FBox BoundingBox(Vertices);
     RenderData->Bounds = FBoxSphereBounds(BoundingBox);
    
+#if RHI_RAYTRACING
     if (StaticMesh->bSupportRayTracing)
     {
         RenderData->InitializeRayTracingRepresentationFromRenderingLODs();
     }
+#endif
 
     // Finalize render data.
     StaticMesh->InitResources();
@@ -1052,10 +1056,7 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
         return false;
     }
 
-    if (!StaticMesh->bAllowCPUAccess)
-    {
-        StaticMesh->bAllowCPUAccess = true;
-    }
+    StaticMesh->bAllowCPUAccess = true;
 
     FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
 
@@ -1064,89 +1065,103 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
         return false;
     }
 
-    FVector PivotDelta = (PivotLocation - In_SMC->GetComponentLocation()) * (-1);
+    FStaticMeshLODResources& LOD = RenderData->LODResources[0];
+    const int32 NumVerts = LOD.VertexBuffers.PositionVertexBuffer.GetNumVertices();
+    const int32 NumUVs = LOD.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords();
+	const FVector PivotDelta = (PivotLocation - In_SMC->GetComponentLocation()) * (-1);
+    const FVector3f PivotDelta_3f = (FVector3f)(PivotDelta);
+    
+    FMeshDescription MeshDesc;
+    FStaticMeshAttributes Attributes(MeshDesc);
+    Attributes.Register();
+
+    auto Positions = Attributes.GetVertexPositions();
+    auto Normals = Attributes.GetVertexInstanceNormals();
+    auto Tangents = Attributes.GetVertexInstanceTangents();
+    auto BinormalSigns = Attributes.GetVertexInstanceBinormalSigns();
+    auto VColors = Attributes.GetVertexInstanceColors();
+    auto UVs = Attributes.GetVertexInstanceUVs();
+    UVs.SetNumChannels(NumUVs);
+
+    TArray<FVertexID> VertexIDs;
+    VertexIDs.SetNum(NumVerts);
+    MeshDesc.ReserveNewVertices(NumVerts);
+    
+    for (int32 v = 0; v < NumVerts; ++v)
+    {
+        VertexIDs[v] = MeshDesc.CreateVertex();
+        Positions[VertexIDs[v]] = LOD.VertexBuffers.PositionVertexBuffer.VertexPosition(v) + PivotDelta_3f;
+    }
+
+    // One polygon group per section preserves material slot mapping.
+    FIndexArrayView Indices = LOD.IndexBuffer.GetArrayView();
+    for (int32 s = 0; s < LOD.Sections.Num(); ++s)
+    {
+        const FStaticMeshSection& Sec = LOD.Sections[s];
+        const FPolygonGroupID PG = MeshDesc.CreatePolygonGroup();
+        Attributes.GetPolygonGroupMaterialSlotNames()[PG] = StaticMesh->GetStaticMaterials()[Sec.MaterialIndex].MaterialSlotName;
+
+        for (uint32 tri = 0; tri < Sec.NumTriangles; ++tri)
+        {
+            const uint32 i0 = Indices[Sec.FirstIndex + tri * 3 + 0];
+            const uint32 i1 = Indices[Sec.FirstIndex + tri * 3 + 1];
+            const uint32 i2 = Indices[Sec.FirstIndex + tri * 3 + 2];
+
+            FVertexInstanceID VI[3];
+            const uint32 Corner[3] = { i0, i1, i2 };
+            
+            for (int32 c = 0; c < 3; ++c)
+            {
+                VI[c] = MeshDesc.CreateVertexInstance(VertexIDs[Corner[c]]);
+                const FVector4f Tx = LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentX(Corner[c]);
+                const FVector4f Tz = LOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(Corner[c]);
+                Normals[VI[c]] = FVector3f(Tz);
+                Tangents[VI[c]] = FVector3f(Tx);
+                
+                // handedness carried in W
+                BinormalSigns[VI[c]] = Tz.W;
+               
+                for (int32 uv = 0; uv < NumUVs; ++uv)
+                {
+					UVs.Set(VI[c], uv, LOD.VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(Corner[c], uv));
+                }
+               
+                if (LOD.VertexBuffers.ColorVertexBuffer.GetNumVertices() > 0)
+                {
+                    const FColor SrcColor = LOD.VertexBuffers.ColorVertexBuffer.VertexColor(Corner[c]);
+                    VColors[VI[c]] = FVector4f(SrcColor.ReinterpretAsLinear());
+                }
+            }
+
+            MeshDesc.CreatePolygon(PG, { VI[0], VI[1], VI[2] });
+        }
+    }
+
+    UStaticMesh::FBuildMeshDescriptionsParams Params;
+    Params.bFastBuild = true;
+    Params.bAllowCpuAccess = true;
+    
+    // we bring our own
+    Params.bBuildSimpleCollision = false;
+
+    TArray<const FMeshDescription*> MeshDescriptions;
+    MeshDescriptions.Add(&MeshDesc);
 
     UStaticMesh* NewStaticMesh = NewObject<UStaticMesh>(Outer ? Outer : GetTransientPackage(), NAME_None, RF_Public);
+    NewStaticMesh->SetStaticMaterials(StaticMesh->GetStaticMaterials());
     NewStaticMesh->bAllowCPUAccess = true;
     NewStaticMesh->NeverStream = true;
-	NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
+    NewStaticMesh->bSupportRayTracing = StaticMesh->bSupportRayTracing;
+    NewStaticMesh->BuildFromMeshDescriptions(MeshDescriptions, Params);
 
-#if WITH_EDITORONLY_DATA
-    NewStaticMesh->SetRayTracingProxySettings(StaticMesh->GetRayTracingProxySettings());
-#endif
-
-    NewStaticMesh->SetRenderData(MakeUnique<FStaticMeshRenderData>());
-    FStaticMeshRenderData* NewRenderData = NewStaticMesh->GetRenderData();
-
-    NewRenderData->AllocateLODResources(RenderData->LODResources.Num());
-
-    for (int32 LODIndex = 0; LODIndex < NewRenderData->LODResources.Num(); LODIndex++)
-    {
-        FStaticMeshLODResources& OriginalLOD = RenderData->LODResources[LODIndex];
-        FStaticMeshLODResources& NewLOD = NewRenderData->LODResources[LODIndex];
-
-        TArray<uint32> Indices;
-        OriginalLOD.IndexBuffer.GetCopy(Indices);
-        NewLOD.IndexBuffer.SetIndices(Indices, OriginalLOD.IndexBuffer.Is32Bit() ? EIndexBufferStride::Force32Bit : EIndexBufferStride::Force16Bit);
-
-        int32 NumPositions = OriginalLOD.VertexBuffers.PositionVertexBuffer.GetNumVertices();
-        NewLOD.VertexBuffers.PositionVertexBuffer.Init(NumPositions);
-        
-        for (int32 PositionIndex = 0; PositionIndex < NumPositions; PositionIndex++)
-        {
-            NewLOD.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) = OriginalLOD.VertexBuffers.PositionVertexBuffer.VertexPosition(PositionIndex) + FVector3f(PivotDelta);
-        }
-
-        uint32 NumVertices = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetNumVertices();
-
-        NewLOD.VertexBuffers.StaticMeshVertexBuffer.Init(NumVertices, OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords());
-
-        for (uint32 VertexIndex = 0; VertexIndex < NumVertices; VertexIndex++)
-        {
-            FVector4f TangentX = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentX(VertexIndex);
-            FVector4f TangentY = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentY(VertexIndex);
-            FVector4f TangentZ = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.VertexTangentZ(VertexIndex);
-            NewLOD.VertexBuffers.StaticMeshVertexBuffer.SetVertexTangents(VertexIndex, TangentX, TangentY, TangentZ);
-            
-            for (uint32 UVIndex = 0; UVIndex < OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords(); UVIndex++)
-            {
-                FVector2f UV = OriginalLOD.VertexBuffers.StaticMeshVertexBuffer.GetVertexUV(VertexIndex, UVIndex);
-                NewLOD.VertexBuffers.StaticMeshVertexBuffer.SetVertexUV(VertexIndex, UVIndex, UV);
-            }
-        }
-
-        TArray<FColor> Colors;
-        OriginalLOD.VertexBuffers.ColorVertexBuffer.GetVertexColors(Colors);
-        
-        if (Colors.Num() > 0)
-        {
-            NewLOD.VertexBuffers.ColorVertexBuffer.InitFromColorArray(Colors);
-        }
-
-        for (int32 SectionIndex = 0; SectionIndex < OriginalLOD.Sections.Num(); SectionIndex++)
-        {
-            FStaticMeshSection& OriginalSection = OriginalLOD.Sections[SectionIndex];
-            FStaticMeshSection& NewSection = NewLOD.Sections.AddDefaulted_GetRef();
-            NewSection = OriginalSection;
-        }
-    }
-
-    NewStaticMesh->SetStaticMaterials(StaticMesh->GetStaticMaterials());
-    NewStaticMesh->InitResources();
-    
-    NewRenderData->Bounds = RenderData->Bounds;
-    NewRenderData->Bounds.Origin += PivotDelta;
-   
-    if (NewStaticMesh->bSupportRayTracing)
-    {
-        NewRenderData->InitializeRayTracingRepresentationFromRenderingLODs();
-    }
-
-    NewStaticMesh->CalculateExtendedBounds();
     NewStaticMesh->CreateBodySetup();
-    NewStaticMesh->GetBodySetup()->CollisionTraceFlag = StaticMesh->GetBodySetup()->CollisionTraceFlag;
-    NewStaticMesh->GetBodySetup()->InvalidatePhysicsData();
-    NewStaticMesh->GetBodySetup()->AggGeom = StaticMesh->GetBodySetup()->AggGeom;
+    UBodySetup* Dst = NewStaticMesh->GetBodySetup();
+    UBodySetup* Src = StaticMesh->GetBodySetup();
+
+    Dst->CollisionTraceFlag = Src->CollisionTraceFlag;
+    
+    // copy, then offset into new pivot space
+    Dst->AggGeom = Src->AggGeom;
 
     for (FKBoxElem& Box : NewStaticMesh->GetBodySetup()->AggGeom.BoxElems)
     {
@@ -1173,11 +1188,12 @@ bool UMeshOperationsBPLibrary::SetPivotLocation(UPARAM(ref) UStaticMeshComponent
         Convex.UpdateElemBox();
     }
 
-    NewStaticMesh->GetBodySetup()->CreatePhysicsMeshes();
+    Dst->InvalidatePhysicsData();
+    Dst->CreatePhysicsMeshes();
 
-    In_SMC->SetStaticMesh(NewStaticMesh);
+	In_SMC->SetStaticMesh(NewStaticMesh);
     In_SMC->AddWorldOffset(PivotLocation - In_SMC->Bounds.Origin);
-    return true;
+	return true;
 }
 
 bool UMeshOperationsBPLibrary::MovePivotsToCenter(USceneComponent* RootComponent, TArray<FString>& ErroredMeshes)

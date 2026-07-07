@@ -24,8 +24,6 @@
 
 #include "PhysicsEngine/BodySetup.h"
 #include "Rendering/PositionVertexBuffer.h"
-#include "RayTracingDefinitions.h" 
-#include "RayTracingGeometry.h"
 #include "RenderingThread.h"
 #include "RenderResource.h"
 
