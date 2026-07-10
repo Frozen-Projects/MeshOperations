@@ -1,5 +1,5 @@
-#include "Widgets/TreeView/Widget_TreeView_Item.h"
-#include "Widgets/TreeView/Widget_TreeView.h"
+#include "Widgets/Widget_TreeView_Item.h"
+#include "Widgets/Widget_TreeView.h"
 
 void UWidget_TreeView_Item::NativePreConstruct()
 {

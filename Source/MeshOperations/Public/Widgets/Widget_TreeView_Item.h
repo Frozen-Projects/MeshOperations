@@ -4,47 +4,13 @@
 #include "Blueprint/UserWidget.h"
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "Widgets/TreeView/Widget_TreeView_Includes.h"
-#include "MeshOperationsBPLibrary.h"
+#include "Widgets/Widget_TreeView_Includes.h"
+#include "Widgets/Widget_TreeView_Data.h"
 
 #include "Widget_TreeView_Item.generated.h"
 
 // Forward Declarations.
 class UWidget_TreeView;
-
-UENUM(BlueprintType)
-enum class EHierarchyNames : uint8
-{
-	None = 0		UMETA(DisplayName = "None"),
-	Object = 1		UMETA(DisplayName = "Object"),
-	Product = 2		UMETA(DisplayName = "Product"),
-	Instance = 3	UMETA(DisplayName = "Instance"),
-};
-ENUM_CLASS_FLAGS(EHierarchyNames)
-
-UCLASS(BlueprintType)
-class MESHOPERATIONS_API UTreeView_Data : public UObject
-{
-	GENERATED_BODY()
-
-public:
-
-	UPROPERTY(BlueprintReadWrite)
-	USceneComponent* Target_Component;
-
-	UPROPERTY(BlueprintReadWrite)
-	int32 Padding_Depth = 0;
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsHighlighted = false;
-
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsCurrentHighlight = false;
-
-	UPROPERTY(BlueprintReadWrite)
-	EHierarchyNames NameType = EHierarchyNames::Product;
-
-};
 
 UCLASS(Abstract, meta = (DisableNativeTick))
 class MESHOPERATIONS_API UWidget_TreeView_Item : public UUserWidget, public IUserObjectListEntry
@@ -119,4 +85,5 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
 	FSlateColor Button_HoverColor = FSlateColor(FLinearColor::Green);
+
 };

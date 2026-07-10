@@ -4,7 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "Runtime/UMG/Public/UMG.h"
 
-#include "Widgets/TreeView/Widget_TreeView_Item.h"
+#include "Widgets/Widget_TreeView_Item.h"
 
 #include "Widget_TreeView.generated.h"
 
@@ -21,24 +21,24 @@ private:
 	TMap<USceneComponent*, UTreeView_Data*> DataCache;
 
 	UPROPERTY()
+	TArray<USceneComponent*> AssemblyRoots;
+
+	UPROPERTY()
 	int32 Current_Index = 0;
 
 	UPROPERTY()
 	int32 Max_Index = 0;
 
+	static EHierarchyNames GetEnumValueByName(const FString& InName);
+
 	UFUNCTION()
 	static FString GetEnumDisplayName(EHierarchyNames In_Enum);
-
-	static EHierarchyNames GetEnumValueByName(const FString& InName);
 
 	UFUNCTION()
 	UTreeView_Data* GetOrCreateData(USceneComponent* InComponent, int32 InDepth);
 
 	UFUNCTION()
 	virtual void HandleGetChildren(UObject* Item, TArray<UObject*>& OutChildren);
-
-	UFUNCTION()
-	virtual bool Hierarchy_Generator();
 	
 	UFUNCTION()
 	virtual void ClearHighlights();
@@ -72,6 +72,15 @@ public:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	virtual TSharedRef<SWidget> RebuildWidget() override;
 
+	UFUNCTION(BlueprintCallable)
+	virtual bool AddItemToHierarchy(USceneComponent* InComponent);
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool Hierarchy_Generator(TArray<USceneComponent*> InComponents);
+
+	UFUNCTION(BlueprintPure)
+	virtual bool IsHierarchyEmpty() const;
+
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* Canvas_Panel = nullptr;
 
@@ -95,8 +104,5 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTreeView* Hierarchy = nullptr;
-
-	UPROPERTY(BlueprintReadWrite, meta = (ExposeOnSpawn = true))
-	USceneComponent* Root = nullptr;
 	
 };

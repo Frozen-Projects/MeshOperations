@@ -1,4 +1,4 @@
-#include "Widgets/TreeView/Widget_TreeView.h"
+#include "Widgets/Widget_TreeView.h"
 
 void UWidget_TreeView::NativePreConstruct()
 {
@@ -23,12 +23,6 @@ void UWidget_TreeView::NativeConstruct()
 		this->MatchingComponents.Empty();
 
 		this->Hierarchy->SetOnGetItemChildren(this, &UWidget_TreeView::HandleGetChildren);
-		
-		if (!this->Hierarchy_Generator())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("%s : failed"), TEXT(__FUNCTION__));
-			return;
-		}
 
 		this->Search_Box->OnTextCommitted.AddDynamic(this, &UWidget_TreeView::On_Search_Committed);
 		this->Search_Next->OnClicked.AddDynamic(this, &UWidget_TreeView::On_Search_Next);
@@ -52,18 +46,6 @@ TSharedRef<SWidget> UWidget_TreeView::RebuildWidget()
 	return Super::RebuildWidget();
 }
 
-FString UWidget_TreeView::GetEnumDisplayName(EHierarchyNames In_Enum)
-{
-	const UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
-
-	if (!EnumPtr)
-	{
-		return FString();
-	}
-
-	return EnumPtr->GetNameStringByValue((int64)In_Enum);
-}
-
 EHierarchyNames UWidget_TreeView::GetEnumValueByName(const FString& InName)
 {
 	UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
@@ -81,6 +63,18 @@ EHierarchyNames UWidget_TreeView::GetEnumValueByName(const FString& InName)
 	}
 
 	return static_cast<EHierarchyNames>(EnumValue);
+}
+
+FString UWidget_TreeView::GetEnumDisplayName(EHierarchyNames In_Enum)
+{
+	const UEnum* EnumPtr = StaticEnum<EHierarchyNames>();
+
+	if (!EnumPtr)
+	{
+		return FString();
+	}
+
+	return EnumPtr->GetNameStringByValue((int64)In_Enum);
 }
 
 UTreeView_Data* UWidget_TreeView::GetOrCreateData(USceneComponent* InComponent, int32 InDepth)
@@ -124,21 +118,6 @@ void UWidget_TreeView::HandleGetChildren(UObject* Item, TArray<UObject*>& OutChi
 			OutChildren.Add(ChildData);
 		}
 	}
-}
-
-bool UWidget_TreeView::Hierarchy_Generator()
-{
-	if (!IsValid(Root) || !IsValid(this->Hierarchy))
-	{
-		return false;
-	}
-
-	this->Hierarchy->ClearListItems();
-
-	UTreeView_Data* RootData = this->GetOrCreateData(Root, 0);
-	this->Hierarchy->AddItem(RootData);
-	
-	return true;
 }
 
 void UWidget_TreeView::ClearHighlights()
@@ -204,30 +183,40 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 		return;
 	}
 
-	if (SearchText.IsEmpty() || !IsValid(this->Root))
-	{
-		this->ClearSearchResults();
-		return;
-	}
-
-	TArray<USceneComponent*> AllComponents;
-	this->Root->GetChildrenComponents(true, AllComponents);
-
-	if (AllComponents.IsEmpty())
-	{
-		this->ClearSearchResults();
-		return;
-	}
-	
 	this->ClearSearchResults();
 
-	const EHierarchyNames CurrentState = UWidget_TreeView::GetEnumValueByName(this->Search_Type->GetSelectedOption());
-	FString SearchTarget;
-
-	for (USceneComponent* Component : AllComponents)
+	if (this->AssemblyRoots.IsEmpty())
 	{
-		switch (CurrentState)
+		return;
+	}
+
+	if (SearchText.IsEmpty())
+	{
+		return;
+	}
+
+	for (USceneComponent* Each_Root : this->AssemblyRoots)
+	{
+		if (!IsValid(Each_Root))
 		{
+			continue;
+		}
+
+		TArray<USceneComponent*> AllComponents;
+		Each_Root->GetChildrenComponents(true, AllComponents);
+
+		if (AllComponents.IsEmpty())
+		{
+			return;
+		}
+
+		const EHierarchyNames CurrentState = UWidget_TreeView::GetEnumValueByName(this->Search_Type->GetSelectedOption());
+		FString SearchTarget;
+
+		for (USceneComponent* Component : AllComponents)
+		{
+			switch (CurrentState)
+			{
 			case EHierarchyNames::Object:
 			{
 				SearchTarget = UMeshOperationsBPLibrary::GetObjectNameForPackage(Component);
@@ -268,50 +257,52 @@ void UWidget_TreeView::On_Search_Committed(const FText& SearchText, ETextCommit:
 			{
 				return;
 			}
-		}
-
-		if (SearchTarget.Contains(SearchText.ToString()))
-		{
-			TArray<USceneComponent*> Temp_Parents;
-			Component->GetParentComponents(Temp_Parents);
-
-			const int32 RootIdx = Temp_Parents.IndexOfByKey(this->Root);
-			if (RootIdx != INDEX_NONE)
-			{
-				Temp_Parents.SetNum(RootIdx + 1);
 			}
 
-			this->MatchingComponents.Add(Component, Temp_Parents);
+			if (SearchTarget.Contains(SearchText.ToString()))
+			{
+				TArray<USceneComponent*> Temp_Parents;
+				Component->GetParentComponents(Temp_Parents);
+
+				const int32 RootIdx = Temp_Parents.IndexOfByKey(Each_Root);
+
+				if (RootIdx != INDEX_NONE)
+				{
+					Temp_Parents.SetNum(RootIdx + 1);
+				}
+
+				this->MatchingComponents.Add(Component, Temp_Parents);
+			}
 		}
-	}
 
-	bool bIsFirstReceived = false;
+		bool bIsFirstReceived = false;
 
-	for (TPair<USceneComponent*, TArray<USceneComponent*>> Pair : this->MatchingComponents)
-	{
-		Algo::Reverse(Pair.Value);
-
-		for (int32 Parent_Index = 0; Parent_Index < Pair.Value.Num(); Parent_Index++)
+		for (TPair<USceneComponent*, TArray<USceneComponent*>> Pair : this->MatchingComponents)
 		{
-			UTreeView_Data* Parent_Data = this->GetOrCreateData(Pair.Value[Parent_Index], Parent_Index);
-			this->Hierarchy->SetItemExpansion(Parent_Data, true);
+			Algo::Reverse(Pair.Value);
+
+			for (int32 Parent_Index = 0; Parent_Index < Pair.Value.Num(); Parent_Index++)
+			{
+				UTreeView_Data* Parent_Data = this->GetOrCreateData(Pair.Value[Parent_Index], Parent_Index);
+				this->Hierarchy->SetItemExpansion(Parent_Data, true);
+			}
+
+			UTreeView_Data* Each_Matched = this->GetOrCreateData(Pair.Key, Pair.Value.Num());
+			Each_Matched->bIsHighlighted = true;
+
+			if (!bIsFirstReceived)
+			{
+				Each_Matched->bIsCurrentHighlight = true;
+				this->Hierarchy->RequestScrollItemIntoView(Each_Matched);
+				bIsFirstReceived = true;
+			}
 		}
 
-		UTreeView_Data* Each_Matched = this->GetOrCreateData(Pair.Key, Pair.Value.Num());
-		Each_Matched->bIsHighlighted = true;
-
-		if (!bIsFirstReceived)
-		{
-			Each_Matched->bIsCurrentHighlight = true;
-			this->Hierarchy->RequestScrollItemIntoView(Each_Matched);
-			bIsFirstReceived = true;
-		}
+		this->Hierarchy->RequestRefresh();
+		const int32 FoundNum = this->MatchingComponents.Num();
+		this->Max_Index = FoundNum - 1;
+		this->Title_Index->SetText(FText::FromString(FString::Printf(TEXT("%d of %d"), 1, FoundNum)));
 	}
-
-	this->Hierarchy->RequestRefresh();
-	const int32 FoundNum = this->MatchingComponents.Num();
-	this->Max_Index = FoundNum - 1;
-	this->Title_Index->SetText(FText::FromString(FString::Printf(TEXT("%d of %d"), 1, FoundNum)));
 }
 
 void UWidget_TreeView::On_Search_Next()
@@ -461,4 +452,73 @@ void UWidget_TreeView::On_Search_Type_Changed(FString SelectedItem, ESelectInfo:
 
 	this->RefreshDisplayedTitles();
 	this->Hierarchy->RequestRefresh();
+}
+
+bool UWidget_TreeView::AddItemToHierarchy(USceneComponent* InComponent)
+{
+	if (!IsValid(InComponent))
+	{
+		return false;
+	}
+
+	if (!IsValid(this->Hierarchy))
+	{
+		return false;
+	}
+
+	if (this->IsHierarchyEmpty())
+	{
+		TArray<USceneComponent*> Temp_Array;
+		Temp_Array.Add(InComponent);
+		this->Hierarchy_Generator(Temp_Array);
+		return true;
+	}
+
+	else
+	{
+		this->AssemblyRoots.Add(InComponent);
+
+		if (UTreeView_Data* NewData = this->GetOrCreateData(InComponent, 0))
+		{
+			this->Hierarchy->AddItem(NewData);
+		}
+
+		this->Hierarchy->RequestRefresh();
+		return true;
+	}
+}
+
+bool UWidget_TreeView::Hierarchy_Generator(TArray<USceneComponent*> InComponents)
+{
+	if (InComponents.IsEmpty())
+	{
+		return false;
+	}
+
+	if (!IsValid(this->Hierarchy))
+	{
+		return false;
+	}
+
+	this->Hierarchy->ClearListItems();
+
+	this->AssemblyRoots = InComponents;
+
+	for (USceneComponent* Each_Root : this->AssemblyRoots)
+	{
+		if (!IsValid(Each_Root))
+		{
+			continue;
+		}
+
+		UTreeView_Data* EachRoot_Data = this->GetOrCreateData(Each_Root, 0);
+		this->Hierarchy->AddItem(EachRoot_Data);
+	}
+
+	return true;
+}
+
+bool UWidget_TreeView::IsHierarchyEmpty() const
+{
+	return this->AssemblyRoots.IsEmpty();
 }
