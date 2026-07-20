@@ -41,11 +41,11 @@ class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLib
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Wave", Keywords = "generate, mesh, wave"), Category = "Frozen Forest|Mesh Operations")
     static bool GenerateWave(bool bIsSin, double Amplitude, double RestHeight, double WaveLenght, TArray<FVector2D>& Out_Vertices, int32& EdgeTriangles);
 
-    static UStaticMesh* GSM_Description(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing = false);
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Static Mesh (Description)", Keywords = "generate, static, mesh"), Category = "Frozen Forest|Mesh Operations")
+    static UStaticMesh* GSM_Description(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<int32>& TriangleMaterialSlots, int32 NumMaterialSlots, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing);
+    
+    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Static Mesh (Render Data)", Keywords = "generate, static, mesh"), Category = "Frozen Forest|Mesh Operations")
     static UStaticMesh* GSM_RenderData(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing = false);
-
-    UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Static Mesh", Keywords = "generate, static, mesh"), Category = "Frozen Forest|Mesh Operations")
-    static UStaticMesh* GenerateStaticMesh(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription = false, bool bSupportRayTracing = false);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Delete Empty Roots", Keywords = "optimize,hierarchy,empty,root,roots"), Category = "Frozen Forest|Mesh Operations")
     static void DeleteEmptyRoots(USceneComponent* AssetRoot);

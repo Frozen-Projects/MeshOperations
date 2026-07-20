@@ -330,19 +330,34 @@ bool UMeshOperationsBPLibrary::GenerateWave(bool bIsSin, double Amplitude, doubl
     return true;
 }
 
-UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
+UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<int32>& TriangleMaterialSlots, int32 NumMaterialSlots, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bSupportRayTracing)
 {
     if (Vertices.IsEmpty())
     {
         return nullptr;
     }
 
-    // Create a new static mesh description.
+    if (Indices.IsEmpty() || Indices.Num() % 3 != 0)
+    {
+        UE_LOG(LogTemp, Error, TEXT("Triangle index count must be a non-zero multiple of 3."));
+        return nullptr;
+    }
+
+    const int32 NumTriangles = Indices.Num() / 3;
+    const int32 EffectiveNumMaterialSlots = FMath::Max(NumMaterialSlots, 1);
+
+    if (!TriangleMaterialSlots.IsEmpty() && TriangleMaterialSlots.Num() != NumTriangles)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TriangleMaterialSlots count must be zero or equal to triangle count. Triangles: %d, material assignments: %d"), NumTriangles, TriangleMaterialSlots.Num());
+
+        return nullptr;
+    }
+
     UStaticMeshDescription* StaticMeshDesc = UStaticMesh::CreateStaticMeshDescription();
-   
+
     if (!StaticMeshDesc)
     {
-        UE_LOG(LogTemp, Error, TEXT("Failed to create StaticMeshDescription."));
+        UE_LOG(LogTemp, Warning, TEXT("Failed to create StaticMeshDescription."));
         return nullptr;
     }
 
@@ -351,89 +366,107 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TA
     MeshDescBuilder.EnablePolyGroups();
     MeshDescBuilder.SetNumUVLayers(1);
 
-    // Create the base vertices.
     const int32 NumVertices = Vertices.Num();
+
     TArray<FVertexID> BaseVertexIDs;
     BaseVertexIDs.SetNum(NumVertices);
 
-    for (int32 Index = 0; Index < NumVertices; Index++)
+    for (int32 Index = 0; Index < NumVertices; ++Index)
     {
         BaseVertexIDs[Index] = MeshDescBuilder.AppendVertex(Vertices[Index]);
     }
 
-    // Create one polygon group (required for at least one material).
-    const FPolygonGroupID PolygonGroup = MeshDescBuilder.AppendPolygonGroup();
+    TArray<FPolygonGroupID> PolygonGroups;
+    TArray<FName> MaterialSlotNames;
 
-    // Validate triangle indices.
-    if (Indices.Num() % 3 != 0)
+    PolygonGroups.Reserve(EffectiveNumMaterialSlots);
+    MaterialSlotNames.Reserve(EffectiveNumMaterialSlots);
+
+    for (int32 MaterialSlotIndex = 0; MaterialSlotIndex < EffectiveNumMaterialSlots; ++MaterialSlotIndex)
     {
-        UE_LOG(LogTemp, Error, TEXT("Triangle index count must be a multiple of 3."));
-        return nullptr;
+        const FName MaterialSlotName(*FString::Printf(TEXT("MaterialSlot_%d"), MaterialSlotIndex));
+
+        MaterialSlotNames.Add(MaterialSlotName);
+        PolygonGroups.Add(MeshDescBuilder.AppendPolygonGroup(MaterialSlotName));
     }
 
-    const int32 NumTriangles = Indices.Num() / 3;
-    
-    for (int32 Tri = 0; Tri < NumTriangles; Tri++)
+    for (int32 Tri = 0; Tri < NumTriangles; ++Tri)
     {
-        TArray<FVertexInstanceID> TriangleVertexInstances;
-        TriangleVertexInstances.Reserve(3);
+        const int32 MaterialSlotIndex = TriangleMaterialSlots.IsEmpty() ? 0 : TriangleMaterialSlots[Tri];
 
-        for (int32 Corner = 0; Corner < 3; Corner++)
+        if (!PolygonGroups.IsValidIndex(MaterialSlotIndex))
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Invalid material slot %d assigned to triangle %d. Material slot count: %d"), MaterialSlotIndex, Tri, EffectiveNumMaterialSlots);
+            return nullptr;
+        }
+
+        FVertexInstanceID TriangleVertexInstances[3];
+
+        for (int32 Corner = 0; Corner < 3; ++Corner)
         {
             const int32 IndexPos = Tri * 3 + Corner;
             const int32 VertexIndex = Indices[IndexPos];
 
             if (!BaseVertexIDs.IsValidIndex(VertexIndex))
             {
-                UE_LOG(LogTemp, Error, TEXT("Invalid vertex index %d at triangle %d corner %d"), VertexIndex, Tri, Corner);
+                UE_LOG(LogTemp, Warning, TEXT("Invalid vertex index %d at triangle %d corner %d"), VertexIndex, Tri, Corner);
                 return nullptr;
             }
 
-            // Create a vertex instance for this triangle corner.
-            FVertexInstanceID InstanceID = MeshDescBuilder.AppendInstance(BaseVertexIDs[VertexIndex]);
+            const FVertexInstanceID InstanceID = MeshDescBuilder.AppendInstance(BaseVertexIDs[VertexIndex]);
 
-            // Set per-instance normal if provided.
-            if (!Normals.IsEmpty() && Normals.IsValidIndex(VertexIndex))
+            if (Normals.IsValidIndex(VertexIndex))
             {
                 MeshDescBuilder.SetInstanceNormal(InstanceID, Normals[VertexIndex]);
             }
 
-            if (!Tangents.IsEmpty() && Tangents.IsValidIndex(VertexIndex))
+            if (Tangents.IsValidIndex(VertexIndex))
             {
-                // Use the corresponding normal if available; otherwise, use ZeroVector.
-                FVector InstanceNormal = Normals.IsValidIndex(VertexIndex) ? Normals[VertexIndex] : FVector::ZeroVector;
-                float TangentSign = 1.0f; // Default sign. Adjust if you have binormal data.
-                MeshDescBuilder.SetInstanceTangentSpace(InstanceID, InstanceNormal, Tangents[VertexIndex], TangentSign);
+                const FVector InstanceNormal = Normals.IsValidIndex(VertexIndex) ? Normals[VertexIndex] : FVector::ZeroVector;
+                MeshDescBuilder.SetInstanceTangentSpace(InstanceID, InstanceNormal, Tangents[VertexIndex], 1.0f);
             }
 
-            if (!UVs.IsEmpty() && UVs.IsValidIndex(VertexIndex))
+            if (UVs.IsValidIndex(VertexIndex))
             {
                 MeshDescBuilder.SetInstanceUV(InstanceID, UVs[VertexIndex], 0);
             }
 
-            TriangleVertexInstances.Add(InstanceID);
+            TriangleVertexInstances[Corner] = InstanceID;
         }
 
-        // Use the underlying MeshDescription to create the polygon with vertex instances.
-        StaticMeshDesc->GetMeshDescription().CreatePolygon(PolygonGroup, TriangleVertexInstances);
+        MeshDescBuilder.AppendTriangle(
+            TriangleVertexInstances[0],
+            TriangleVertexInstances[1],
+            TriangleVertexInstances[2],
+            PolygonGroups[MaterialSlotIndex]);
     }
 
-    // Create a new UStaticMesh with the provided name.
     UStaticMesh* StaticMesh = NewObject<UStaticMesh>(GetTransientPackage(), Mesh_Name.IsNone() ? NAME_None : Mesh_Name, RF_Public | RF_Standalone);
-    StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, TEXT("DefaultMaterialSlot")));
+
+    if (!StaticMesh)
+    {
+        return nullptr;
+    }
+
+    StaticMesh->GetStaticMaterials().Reserve(EffectiveNumMaterialSlots);
+
+    for (const FName& MaterialSlotName : MaterialSlotNames)
+    {
+        StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, MaterialSlotName, MaterialSlotName));
+    }
+
     StaticMesh->bAllowCPUAccess = true;
     StaticMesh->NeverStream = true;
     StaticMesh->bSupportRayTracing = bSupportRayTracing;
 
-    // Build parameters (for example, enabling simple collision).
     UStaticMesh::FBuildMeshDescriptionsParams MeshDescriptionsParams;
     MeshDescriptionsParams.bBuildSimpleCollision = true;
 
-    // Build the mesh from the description.
     TArray<const FMeshDescription*> MeshDescriptions;
     MeshDescriptions.Emplace(&StaticMeshDesc->GetMeshDescription());
+
     StaticMesh->BuildFromMeshDescriptions(MeshDescriptions, MeshDescriptionsParams);
-    
+
     StaticMesh->CreateBodySetup();
     StaticMesh->GetBodySetup()->CollisionTraceFlag = CTF_UseComplexAsSimple;
     StaticMesh->GetBodySetup()->InvalidatePhysicsData();
@@ -572,19 +605,6 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_RenderData(FName Mesh_Name, const TAr
     BodySetup->CreatePhysicsMeshes();
 
     return StaticMesh;
-}
-
-UStaticMesh* UMeshOperationsBPLibrary::GenerateStaticMesh(FName Mesh_Name, const TArray<FVector>& Vertices, const TArray<int32>& Indices, const TArray<FVector>& Normals, const TArray<FVector>& Tangents, const TArray<FVector2D>& UVs, bool bUseDescription, bool bSupportRayTracing)
-{
-    if (bUseDescription)
-    {
-       return UMeshOperationsBPLibrary::GSM_Description(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bSupportRayTracing);
-    }
-
-    else
-    {
-		return UMeshOperationsBPLibrary::GSM_RenderData(Mesh_Name, Vertices, Indices, Normals, Tangents, UVs, bSupportRayTracing);
-    }
 }
 
 void UMeshOperationsBPLibrary::DeleteEmptyRoots(USceneComponent* AssetRoot)
