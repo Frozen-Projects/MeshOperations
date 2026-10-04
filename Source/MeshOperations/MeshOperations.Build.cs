@@ -30,14 +30,20 @@ public class MeshOperations : ModuleRules
                 "RenderCore",
             });
 			
-		PrivateDependencyModuleNames.AddRange(
-			new string[]
+		PrivateDependencyModuleNames.AddRange(new string[]
 			{
 				"CoreUObject",
 				"Engine",
 				"Slate",
 				"SlateCore",
+            });
+
+        if (Target.Type == TargetType.Editor)
+        {
+            PrivateDependencyModuleNames.AddRange(new string[]
+            {
                 "UnrealEd",
             });
-	}
+        }
+    }
 }
