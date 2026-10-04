@@ -452,7 +452,7 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TA
 
     for (const FName& MaterialSlotName : MaterialSlotNames)
     {
-        StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, MaterialSlotName, MaterialSlotName));
+        StaticMesh->GetStaticMaterials().Add(FStaticMaterial(nullptr, MaterialSlotName));
     }
 
     StaticMesh->bAllowCPUAccess = true;
@@ -461,6 +461,8 @@ UStaticMesh* UMeshOperationsBPLibrary::GSM_Description(FName Mesh_Name, const TA
 
     UStaticMesh::FBuildMeshDescriptionsParams MeshDescriptionsParams;
     MeshDescriptionsParams.bBuildSimpleCollision = true;
+    MeshDescriptionsParams.bFastBuild = true;
+    MeshDescriptionsParams.bMarkPackageDirty = false;
 
     TArray<const FMeshDescription*> MeshDescriptions;
     MeshDescriptions.Emplace(&StaticMeshDesc->GetMeshDescription());
