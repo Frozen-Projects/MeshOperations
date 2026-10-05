@@ -1,6 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "MeshOps_Enums.h"
+
 #include "MeshOps_Structs.generated.h"
 
 USTRUCT(BlueprintType)
@@ -157,4 +160,36 @@ public:
 	/** Mode determining if and how to export material variants that change the materials property on a static or skeletal mesh component. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta = (EditCondition = "VariantSetsMode != EGLTFVariantSetsMode::None"))
 	EGLTFMaterialVariantMode ExportMaterialVariants;
+};
+
+USTRUCT(BlueprintType)
+struct MESHOPERATIONS_API FMaterialParameters
+{
+	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	FName Param_Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	ETextureParameterType Param_Type = ETextureParameterType::Scalar;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	double Param_Scalar;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	FLinearColor Param_Vector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	UTexture* Param_Texture;
+};
+
+USTRUCT(BlueprintType)
+struct MESHOPERATIONS_API FMaterialParametersArray
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations")
+	TArray<FMaterialParameters> MaterialParameters;
 };

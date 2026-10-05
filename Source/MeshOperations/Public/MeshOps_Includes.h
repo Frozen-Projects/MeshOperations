@@ -2,11 +2,17 @@
 
 #include "Math/Vector.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetMaterialLibrary.h"
 
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
 
 #include "Engine/StaticMeshActor.h"
+
+#include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
+#include "Components/InstancedStaticMeshComponent.h"
+#include "Components/HierarchicalInstancedStaticMeshComponent.h"
 
 #include "Components/SceneComponent.h"
 #include "Components/ActorComponent.h"
