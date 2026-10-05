@@ -14,7 +14,8 @@ class MESHOPERATIONS_API APlanar_Placement : public AActor
 	
 private:
 
-	static bool IsPointInsideSpline(USplineComponent* BoundarySpline, const FVector& Point);
+	UPROPERTY()
+	TArray<FTransform> Grid_Vertices;
 
 protected:
 	
@@ -32,10 +33,33 @@ public:
 	// Called every frame.
 	virtual void Tick(float DeltaTime) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|Contents|Planar Grid")
-	bool Grid_Generate(TArray<FTransform>& Out_Vertices, USplineComponent* BoundarySpline, FVector Size = FVector(0.1), double GridSize = 100, int32 Layer = 1, double Height = 10);
+	virtual void OnConstruction(const FTransform& Transform) override;
 
-	UFUNCTION(BlueprintCallable, Category = "Frozen Forest|Contents|Planar Grid")
-	void Grid_Debug(FVector Point, bool bInside, bool bIsPersistant, double Time = 10);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	USceneComponent* DefaultSceneRoot = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	USplineComponent* Spline = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	int32 Layer = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	double GridSize = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	double Layer_Height = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	FVector ObjectSize = FVector(0.1);
+
+	UFUNCTION(BlueprintPure, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	virtual bool IsPointInsideSpline(const FVector& Point) const;
+
+	UFUNCTION(BlueprintPure, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	virtual TArray<FTransform> GetGridVertices() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Frozen Forest | Mesh Operations | Planar Placement")
+	bool Generate_Grid();
 
 };

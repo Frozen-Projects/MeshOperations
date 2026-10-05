@@ -30,4 +30,10 @@ public:
 	// Called every frame.
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations |Spline Placement")
+	USceneComponent* DefaultSceneRoot = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Frozen Forest| Mesh Operations |Spline Placement")
+	USplineComponent* Spline = nullptr;
+
 };

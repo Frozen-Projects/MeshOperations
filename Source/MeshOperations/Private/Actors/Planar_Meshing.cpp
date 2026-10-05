@@ -5,6 +5,15 @@ APlanar_Meshing::APlanar_Meshing()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	if (!this->RootComponent)
+	{
+		this->DefaultSceneRoot = this->CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
+		this->RootComponent = this->DefaultSceneRoot;
+	}
+
+	this->Spline = this->CreateDefaultSubobject<USplineComponent>(TEXT("Spline"));
+	this->Spline->SetupAttachment(this->DefaultSceneRoot);
 }
 
 // Called when the game starts or when spawned.
