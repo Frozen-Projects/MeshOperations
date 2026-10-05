@@ -36,6 +36,7 @@ public class MeshOperations : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "GeometryCore",
             });
 
         if (Target.Type == TargetType.Editor)

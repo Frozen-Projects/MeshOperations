@@ -7,18 +7,21 @@
 #include "UObject/Object.h"
 #include "UObject/ConstructorHelpers.h"
 
+#include "Materials/MaterialInterface.h"
+
 #include "Engine/StaticMeshActor.h"
 
 #include "Components/SplineComponent.h"
 #include "Components/SplineMeshComponent.h"
 #include "Components/InstancedStaticMeshComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
-
 #include "Components/SceneComponent.h"
 #include "Components/ActorComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
+
+#include "CompGeom/PolygonTriangulation.h"
 
 #include "ProceduralMeshComponent.h"
 #include "ProceduralMeshConversion.h"
