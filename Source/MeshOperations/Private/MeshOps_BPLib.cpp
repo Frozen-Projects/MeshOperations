@@ -1,6 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
-#include "MeshOperationsBPLibrary.h"
+#include "MeshOps_BPLib.h"
 #include "MeshOperations.h"
 
 UMeshOperationsBPLibrary::UMeshOperationsBPLibrary(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -171,6 +169,31 @@ UProceduralMeshComponent* UMeshOperationsBPLibrary::AddProcMeshCompWithName(AAct
     ProcMeshComp->RegisterComponent();
 
     return ProcMeshComp;
+}
+
+bool UMeshOperationsBPLibrary::AddChildComponentAtIndex(USceneComponent* Parent, USceneComponent* Child, int32 Target_Index, EAttachmentRule Attachment_Rule, bool bInWeldSimulatedBodies)
+{
+    if (!IsValid(Parent))
+    {
+        return false;
+    }
+
+	if (!IsValid(Child))
+	{
+		return false;
+	}
+
+    TArray<TObjectPtr<USceneComponent>>& Children = const_cast<TArray<TObjectPtr<USceneComponent>>&>(Parent->GetAttachChildren());
+    const int32 CurrentIndex = Children.Find(Child);
+   
+    if (CurrentIndex != INDEX_NONE)
+    {
+        Children.RemoveAt(CurrentIndex);
+        int32 ValidIndex = FMath::Clamp(Target_Index, 0, Children.Num());
+        Children.Insert(Child, ValidIndex);
+    }
+
+    return true;
 }
 
 void UMeshOperationsBPLibrary::GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>& Triangles, TArray<FVector>& Normals, TArray<FVector2D>& UVs, TArray<FProcMeshTangent>& ProcMeshTangents, TArray<FVector>& Tangents)

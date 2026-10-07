@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 #include "Kismet/BlueprintFunctionLibrary.h"
@@ -7,7 +5,7 @@
 #include "MeshOps_Includes.h"
 #include "MeshOps_Structs.h"
 
-#include "MeshOperationsBPLibrary.generated.h"
+#include "MeshOps_BPLib.generated.h"
 
 UCLASS()
 class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLibrary
@@ -31,6 +29,9 @@ class MESHOPERATIONS_API UMeshOperationsBPLibrary : public UBlueprintFunctionLib
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "AddProcMeshCompWithName", Keywords = "procedural,mesh,component,name"), Category = "Frozen Forest|Mesh Operations")
     static UProceduralMeshComponent* AddProcMeshCompWithName(AActor* Outer, FName In_Name, EAttachmentRule Attachment_Rule, bool Manual_Attachment, bool bUseAsyncCooking, bool bUseComplexCollisionAsSimple, FTransform Relative_Transform, EComponentMobility::Type Mobility = EComponentMobility::Movable);
+
+	UFUNCTION(BlueprintCallable, meta = (DisplayName = "Add Child Component At Index", Keywords = "add, child, component, index"), Category = "Frozen Forest|Mesh Operations")
+	static bool AddChildComponentAtIndex(USceneComponent* Parent, USceneComponent* Child, int32 Target_Index, EAttachmentRule Attachment_Rule, bool bInWeldSimulatedBodies);
 
     UFUNCTION(BlueprintCallable, meta = (DisplayName = "Generate Box Mesh At Bottom", Keywords = "generate, mesh, box, at, bottom"), Category = "Frozen Forest|Mesh Operations")
     static void GenerateBoxMeshAtBottom(FVector BoxRadius, TArray<FVector>&Vertices, TArray<int32>&Triangles, TArray<FVector>&Normals, TArray<FVector2D>&UVs, TArray<FProcMeshTangent>&ProcMeshTangents, TArray<FVector>& Tangents);

@@ -23,6 +23,49 @@ TSharedRef<SWidget> UWidget_TreeView_Item::RebuildWidget()
 	return Super::RebuildWidget();
 }
 
+void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
+{
+	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
+
+	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(ListItemObject);
+
+	if (!IsValid(TreeView_Data) || !IsValid(TreeView_Data->Target_Component))
+	{
+		return;
+	}
+
+	this->UpdateTitle_Internal(TreeView_Data);
+
+	this->ApplyHighlightColor_Internal(TreeView_Data);
+
+	if (!IsValid(this->Button_Expand))
+	{
+		return;
+	}
+
+	// Actual widget item is not moving, but we are adjusting the padding of the button that is located in the "horizontal box" to give the illusion of movement.
+	if (UHorizontalBoxSlot* ButtonSlot = Cast<UHorizontalBoxSlot>(this->Button_Expand->Slot))
+	{
+		FMargin NewPadding = ButtonSlot->GetPadding();
+		NewPadding.Left = TreeView_Data->Padding_Depth * this->IndentationPerLevel;
+		ButtonSlot->SetPadding(NewPadding);
+	}
+
+	this->UpdateExpansionVisuals(IsListItemExpanded());
+
+	// We hide expand button after padding else, padding won't work. Also, we need to hide it instead collapse because we need its layout.
+
+	const bool bHasChildren = TreeView_Data->Target_Component->GetNumChildrenComponents() > 0;
+	const ESlateVisibility NewVisibility = bHasChildren ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
+	this->Button_Expand->SetVisibility(NewVisibility);
+}
+
+void UWidget_TreeView_Item::NativeOnItemExpansionChanged(bool bIsExpanded)
+{
+	IUserObjectListEntry::NativeOnItemExpansionChanged(bIsExpanded);
+	this->UpdateExpansionVisuals(bIsExpanded);
+}
+
 void UWidget_TreeView_Item::UpdateExpansionVisuals(bool bIsExpanded)
 {
 	if (!IsValid(this->Button_Expand))
@@ -153,47 +196,4 @@ void UWidget_TreeView_Item::On_Expand_Children()
 	}
 
 	OwningTreeView->SetItemExpansion(TreeView_Data, !IsListItemExpanded());
-}
-
-void UWidget_TreeView_Item::NativeOnListItemObjectSet(UObject* ListItemObject)
-{
-	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
-
-	UTreeView_Data* TreeView_Data = Cast<UTreeView_Data>(ListItemObject);
-
-	if (!IsValid(TreeView_Data) || !IsValid(TreeView_Data->Target_Component))
-	{
-		return;
-	}
-
-	this->UpdateTitle_Internal(TreeView_Data);
-
-	this->ApplyHighlightColor_Internal(TreeView_Data);
-
-	if (!IsValid(this->Button_Expand))
-	{
-		return;
-	}
-
-	// Actual widget item is not moving, but we are adjusting the padding of the button that is located in the "horizontal box" to give the illusion of movement.
-	if (UHorizontalBoxSlot* ButtonSlot = Cast<UHorizontalBoxSlot>(this->Button_Expand->Slot))
-	{
-		FMargin NewPadding = ButtonSlot->GetPadding();
-		NewPadding.Left = TreeView_Data->Padding_Depth * this->IndentationPerLevel;
-		ButtonSlot->SetPadding(NewPadding);
-	}
-
-	this->UpdateExpansionVisuals(IsListItemExpanded());
-
-	// We hide expand button after padding else, padding won't work. Also, we need to hide it instead collapse because we need its layout.
-
-	const bool bHasChildren = TreeView_Data->Target_Component->GetNumChildrenComponents() > 0;
-	const ESlateVisibility NewVisibility = bHasChildren ? ESlateVisibility::Visible : ESlateVisibility::Hidden;
-	this->Button_Expand->SetVisibility(NewVisibility);
-}
-
-void UWidget_TreeView_Item::NativeOnItemExpansionChanged(bool bIsExpanded)
-{
-	IUserObjectListEntry::NativeOnItemExpansionChanged(bIsExpanded);
-	this->UpdateExpansionVisuals(bIsExpanded);
 }
